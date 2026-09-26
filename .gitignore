@@ -1,0 +1,7 @@
+# Appli web compilée (générée par le build)
+agent/webdist/dist/*
+!agent/webdist/dist/.gitkeep
+
+# Exe produits
+*.exe
+bin/
