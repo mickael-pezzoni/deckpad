@@ -35,6 +35,7 @@ func readNvidiaSMI(ctx context.Context) *GPU {
 	hideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
+		logOnce("nvidia-smi a échoué : %v", err)
 		return nil
 	}
 	return parseSMI(string(out))

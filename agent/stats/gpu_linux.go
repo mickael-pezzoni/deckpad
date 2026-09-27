@@ -9,20 +9,24 @@ import (
 
 // readPlatformGPU lit le pilote amdgpu via sysfs (charge, VRAM, température).
 func readPlatformGPU() *GPU {
-	return readAMDSysfs("/sys/class/drm")
+	g := readAMDSysfs("/sys/class/drm")
+	if g == nil {
+		logOnce("aucune carte amdgpu trouvée dans /sys/class/drm (ni nvidia-smi)")
+	}
+	return g
 }
 
 func readAMDSysfs(drm string) *GPU {
 	cards, _ := filepath.Glob(filepath.Join(drm, "card[0-9]*", "device"))
 	var best *GPU
 	for _, dev := range cards {
-		busy, ok := readUint(filepath.Join(dev, "gpu_busy_percent"))
-		if !ok {
-			continue // pas un GPU AMD
+		busy, okBusy := readUint(filepath.Join(dev, "gpu_busy_percent"))
+		total, okVram := readUint(filepath.Join(dev, "mem_info_vram_total"))
+		if !okBusy && !okVram {
+			continue // pas un GPU amdgpu
 		}
-		g := &GPU{Name: amdName(dev), Usage: float64(busy)}
+		g := &GPU{Name: amdName(dev), Usage: float64(busy), MemTotal: total}
 		g.MemUsed, _ = readUint(filepath.Join(dev, "mem_info_vram_used"))
-		g.MemTotal, _ = readUint(filepath.Join(dev, "mem_info_vram_total"))
 		if hw, _ := filepath.Glob(filepath.Join(dev, "hwmon", "hwmon*", "temp1_input")); len(hw) > 0 {
 			if milli, ok := readUint(hw[0]); ok {
 				t := float64(milli) / 1000

@@ -14,7 +14,7 @@ import (
 // tâches) : ils marchent pour toutes les marques mais ne donnent pas la température.
 //
 // Compteurs utilisés :
-//   \GPU Engine(*engtype_3D)\Utilization Percentage  (une instance par processus et par GPU)
+//   \GPU Engine(*)\Utilization Percentage  (une instance par processus, GPU et moteur ; on garde les moteurs 3D)
 //   \GPU Adapter Memory(*)\Dedicated Usage           (une instance par GPU)
 // Nom et VRAM totale viennent du registre.
 
@@ -61,13 +61,21 @@ func readPlatformGPU() *GPU {
 		return nil
 	}
 	if r, _, _ := procPdhCollectQueryData.Call(counters.query); r != 0 {
+		// Un compteur sans données suffit à renvoyer une erreur : on lit quand même.
+		logOnce("PdhCollectQueryData a renvoyé 0x%X", r)
+	}
+	mem, _ := pdhArray(counters.memory)
+	eng := map[string]float64{}
+	all, _ := pdhArray(counters.engine) // vide au tout premier appel (compteur de taux)
+	for name, v := range all {
+		if strings.HasSuffix(name, "engtype_3D") {
+			eng[name] = v
+		}
+	}
+	if len(mem) == 0 && len(eng) == 0 {
+		logOnce("aucune instance dans les compteurs GPU Engine / GPU Adapter Memory")
 		return nil
 	}
-	mem, ok := pdhArray(counters.memory)
-	if !ok || len(mem) == 0 {
-		return nil
-	}
-	eng, _ := pdhArray(counters.engine) // vide au tout premier appel (compteur de taux)
 
 	// On retient le GPU qui utilise le plus de VRAM : en jeu, c'est la carte dédiée.
 	var luid string
@@ -77,17 +85,26 @@ func readPlatformGPU() *GPU {
 			luid, memUsed = l, v
 		}
 	}
-	if luid == "" {
-		return nil
-	}
-	var usage float64
+	usageByLuid := map[string]float64{}
 	for name, v := range eng {
-		if luidOf(name) == luid {
-			usage += v
+		usageByLuid[luidOf(name)] += v
+	}
+	if luid == "" { // pas de compteur mémoire : on prend le GPU le plus chargé
+		best := -1.0
+		for l, u := range usageByLuid {
+			if l != "" && u > best {
+				luid, best = l, u
+			}
 		}
 	}
+	if luid == "" {
+		logOnce("impossible d'identifier le GPU dans les noms d'instance")
+		return nil
+	}
+	usage := usageByLuid[luid]
 
 	adapterOnce.Do(loadAdapterInfo)
+	logOnce("détecté via les compteurs Windows : %q, %d Mo de VRAM", adapter.name, adapter.vram>>20)
 	return &GPU{
 		Name:     adapter.name,
 		Usage:    min(usage, 100),
@@ -97,20 +114,26 @@ func readPlatformGPU() *GPU {
 }
 
 func openGPUCounters() *gpuCounters {
-	if pdh.Load() != nil {
+	if err := pdh.Load(); err != nil {
+		logOnce("pdh.dll indisponible : %v", err)
 		return nil
 	}
 	var c gpuCounters
 	if r, _, _ := procPdhOpenQueryW.Call(0, 0, uintptr(unsafe.Pointer(&c.query))); r != 0 {
+		logOnce("PdhOpenQuery a renvoyé 0x%X", r)
 		return nil
 	}
 	add := func(path string, h *uintptr) bool {
 		p, _ := syscall.UTF16PtrFromString(path)
 		r, _, _ := procPdhAddEnglishCounterW.Call(c.query, uintptr(unsafe.Pointer(p)), 0, uintptr(unsafe.Pointer(h)))
+		if r != 0 {
+			logOnce("compteur %s refusé : 0x%X", path, r)
+		}
 		return r == 0
 	}
-	if !add(`\GPU Engine(*engtype_3D)\Utilization Percentage`, &c.engine) ||
-		!add(`\GPU Adapter Memory(*)\Dedicated Usage`, &c.memory) {
+	okEngine := add(`\GPU Engine(*)\Utilization Percentage`, &c.engine)
+	okMemory := add(`\GPU Adapter Memory(*)\Dedicated Usage`, &c.memory)
+	if !okEngine && !okMemory {
 		return nil
 	}
 	procPdhCollectQueryData.Call(c.query) // première mesure de référence
@@ -122,7 +145,7 @@ func pdhArray(counter uintptr) (map[string]float64, bool) {
 	var size, count uint32
 	r, _, _ := procPdhGetFormattedCounterArrayW.Call(counter, pdhFmtDouble|pdhFmtNoCap100,
 		uintptr(unsafe.Pointer(&size)), uintptr(unsafe.Pointer(&count)), 0)
-	if r != pdhMoreData || size == 0 {
+	if counter == 0 || r != pdhMoreData || size == 0 {
 		return nil, false
 	}
 	buf := make([]uint64, (size+7)/8) // aligné sur 8 octets
