@@ -601,15 +601,23 @@ body,
   color: var(--muted);
 }
 
-/* Molettes de volume : une carte par molette. Au-delà d'un écran, seule la
-   grille défile (verticalement, sans gêner le changement de page). */
-.grid-knobs {
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  grid-auto-rows: minmax(250px, 1fr);
+/* Table de mixage : une colonne par curseur, défile de côté si trop d'applis. */
+.mixer {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: var(--gap);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mixer::-webkit-scrollbar {
+  display: none;
 }
 
 .mixer-empty {
   display: grid;
+  flex: 1;
   place-items: center;
   margin: 0;
   color: var(--muted);
@@ -617,99 +625,100 @@ body,
   text-align: center;
 }
 
-.knob-card {
+.fader {
   display: flex;
+  flex: 0 1 170px;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 14px;
+  min-width: 120px;
   min-height: 0;
-  overflow: hidden;
-  padding: 18px 20px 20px;
+  padding: 20px 16px 16px;
   border-radius: var(--radius);
   background: var(--tile);
 }
 
-.knob-label {
+.fader-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.fader-label {
+  max-width: 100%;
   overflow: hidden;
+  color: var(--muted);
+  font-size: 16px;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.tile-label:has(.knob-label) {
-  min-width: 0;
+.fader-value {
+  font-size: 24px;
+  white-space: nowrap;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.knob-mute {
+/* Piste large pour le doigt : on la tape ou on la fait glisser. */
+.fader-track {
+  position: relative;
+  flex: 1;
+  width: 72px;
+  min-height: 80px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--tile-active);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.fader-fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--accent);
+}
+
+.fader-fill::after {
+  /* repère du niveau : une barre claire en haut du remplissage */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.7);
+  transform: translateY(6px);
+}
+
+.fader-mute {
   display: grid;
   flex: none;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  height: 60px;
   border: none;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--tile-active);
   color: var(--text);
   cursor: pointer;
 }
 
-/* La molette prend toute la place restante, en restant ronde. */
-.knob {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  cursor: pointer;
-  touch-action: none;
-}
-
-.knob-track,
-.knob-fill {
-  fill: none;
-  stroke-width: 10;
-  stroke-linecap: round;
-}
-
-.knob-track {
-  stroke: var(--tile-active);
-}
-
-.knob-fill {
-  stroke: var(--accent);
-}
-
-.knob-thumb {
-  fill: var(--text);
-  stroke: var(--tile);
-  stroke-width: 3;
-  transition: r 0.1s;
-}
-
-.is-dragging .knob-thumb {
-  r: 9px;
-}
-
-.knob-value {
-  fill: var(--text);
-  font-size: 22px;
-  font-weight: 600;
-  text-anchor: middle;
-  dominant-baseline: central;
-  font-variant-numeric: tabular-nums;
-}
-
-.knob-unit {
-  fill: var(--muted);
-  font-size: 12px;
-}
-
-.is-muted .knob-fill {
-  stroke: var(--muted);
+.fader.is-muted .fader-fill {
+  background: var(--muted);
   opacity: 0.45;
 }
 
-.is-muted .knob-value {
-  fill: var(--muted);
+.fader.is-muted .fader-value {
+  color: var(--muted);
 }
 
-.is-muted .knob-mute {
+.fader.is-muted .fader-mute {
   background: color-mix(in srgb, var(--critical) 24%, transparent);
   color: var(--critical-text);
 }
@@ -717,6 +726,13 @@ body,
 @media (max-height: 700px) {
   .audio-bar {
     margin-bottom: 16px;
+  }
+  .fader {
+    gap: 10px;
+    padding: 14px 12px 12px;
+  }
+  .fader-mute {
+    height: 52px;
   }
 }
 
@@ -726,15 +742,14 @@ body,
     align-items: stretch;
     gap: 12px;
   }
-  .grid-knobs {
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 200px;
+  .fader {
+    min-width: 96px;
   }
-  .knob-card {
-    padding: 14px;
+  .fader-value {
+    font-size: 20px;
   }
-  .knob-card .tile-icon {
-    display: none; /* place pour le nom sur téléphone */
+  .fader-track {
+    width: 60px;
   }
 }
 

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Headphones, Mic, MicOff, MonitorSpeaker, Speaker, Volume2, type LucideIcon } from 'lucide-react'
-import { VolumeKnob } from '../components/VolumeKnob'
+import { VolumeFader } from '../components/VolumeFader'
 import { AppIcon } from '../components/AppIcon'
 import { Loader } from '../components/Loader'
 import { useEventStream } from '../hooks/useEventStream'
@@ -54,9 +54,9 @@ export function AudioPage() {
         />
         <MicButton mic={state.mic} onMute={(m) => setMute('mic', m)} />
       </div>
-      <div className="grid grid-knobs">
+      <Mixer>
         {state.master ? (
-          <VolumeKnob
+          <VolumeFader
             label="Général"
             icon={<Volume2 size={20} strokeWidth={2} aria-hidden />}
             volume={state.master.volume}
@@ -68,7 +68,7 @@ export function AudioPage() {
           <p className="mixer-empty">Aucune sortie audio</p>
         )}
         {state.apps.map((a) => (
-          <VolumeKnob
+          <VolumeFader
             key={a.id}
             label={a.name}
             appIcon
@@ -80,7 +80,7 @@ export function AudioPage() {
           />
         ))}
         {state.master && state.apps.length === 0 && <p className="mixer-empty">Aucune appli ne joue de son</p>}
-      </div>
+      </Mixer>
       {notice && createPortal(<div className="toast">{notice}</div>, document.body)}
     </>
   )
@@ -141,6 +141,30 @@ function MicButton({ mic, onMute }: { mic: Level | null; onMute: (muted: boolean
       <Icon size={26} strokeWidth={2} aria-hidden />
       {muted ? 'Micro coupé' : 'Micro actif'}
     </button>
+  )
+}
+
+// Rangée de curseurs. Si elle déborde (beaucoup d'applis), elle défile de côté :
+// il faut alors bloquer le changement de page quand on la fait glisser.
+function Mixer({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [overflows, setOverflows] = useState(false)
+
+  const check = () => {
+    const el = ref.current
+    if (el) setOverflows(el.scrollWidth > el.clientWidth + 1)
+  }
+  useLayoutEffect(check) // une appli en plus ou en moins
+  useLayoutEffect(() => {
+    const ro = new ResizeObserver(check) // rotation de la tablette
+    ro.observe(ref.current!)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className={overflows ? 'mixer swiper-no-swiping' : 'mixer'}>
+      {children}
+    </div>
   )
 }
 
