@@ -8,14 +8,22 @@ import (
 	"sync"
 )
 
+// readGPU essaie nvidia-smi (seul à donner la température partout), puis la
+// méthode du système, qui marche pour toutes les marques.
+func readGPU(ctx context.Context) *GPU {
+	if g := readNvidiaSMI(ctx); g != nil {
+		return g
+	}
+	return readPlatformGPU()
+}
+
 // nvidia-smi est livré avec le pilote NVIDIA, sous Windows comme sous Linux.
-// Les autres GPU ne sont pas encore pris en charge.
 var (
 	smiOnce sync.Once
 	smiPath string
 )
 
-func readGPU(ctx context.Context) *GPU {
+func readNvidiaSMI(ctx context.Context) *GPU {
 	smiOnce.Do(func() { smiPath, _ = exec.LookPath("nvidia-smi") })
 	if smiPath == "" {
 		return nil
@@ -44,11 +52,12 @@ func parseSMI(out string) *GPU {
 		return v
 	}
 	const mib = 1 << 20
+	temp := num(4)
 	return &GPU{
 		Name:     strings.TrimSpace(f[0]),
 		Usage:    num(1),
 		MemUsed:  uint64(num(2)) * mib,
 		MemTotal: uint64(num(3)) * mib,
-		Temp:     num(4),
+		Temp:     &temp,
 	}
 }

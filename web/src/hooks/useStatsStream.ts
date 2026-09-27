@@ -4,7 +4,7 @@ export type Stats = {
   cpu: number
   ramUsed: number
   ramTotal: number
-  gpu: { name: string; usage: number; memUsed: number; memTotal: number; temp: number } | null
+  gpu: { name: string; usage: number; memUsed: number; memTotal: number; temp: number | null } | null
   fps: number | null
 }
 

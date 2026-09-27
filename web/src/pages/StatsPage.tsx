@@ -1,6 +1,6 @@
 import { Tile } from '../components/Tile'
 import { Sparkline } from '../components/Sparkline'
-import { useStatsStream } from '../hooks/useStatsStream'
+import { useStatsStream, type Stats } from '../hooks/useStatsStream'
 
 export function StatsPage() {
   const { latest, history, connected } = useStatsStream()
@@ -27,7 +27,7 @@ export function StatsPage() {
       </Tile>
       <Tile
         label="GPU"
-        detail={gpu ? `${gpu.temp} °C · ${gb(gpu.memUsed)} / ${gb(gpu.memTotal)} Go` : 'Non détecté'}
+        detail={gpu ? gpuDetail(gpu) : 'Non détecté'}
         chart={gpu && <Sparkline values={history.map((s) => s.gpu?.usage ?? 0)} />}
       >
         {gpu ? `${Math.round(gpu.usage)} %` : '—'}
@@ -38,6 +38,11 @@ export function StatsPage() {
       {!connected && <p className="coming-soon">Connexion perdue, reconnexion…</p>}
     </div>
   )
+}
+
+function gpuDetail(gpu: NonNullable<Stats['gpu']>) {
+  const vram = gpu.memTotal > 0 ? `${gb(gpu.memUsed)} / ${gb(gpu.memTotal)} Go` : `${gb(gpu.memUsed)} Go`
+  return gpu.temp == null ? vram : `${Math.round(gpu.temp)} °C · ${vram}`
 }
 
 function gb(bytes: number) {

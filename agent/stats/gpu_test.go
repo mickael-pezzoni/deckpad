@@ -7,7 +7,7 @@ func TestParseSMI(t *testing.T) {
 	if g == nil {
 		t.Fatal("GPU attendu")
 	}
-	if g.Name != "NVIDIA GeForce RTX 4070" || g.Usage != 35 || g.Temp != 54 {
+	if g.Name != "NVIDIA GeForce RTX 4070" || g.Usage != 35 || g.Temp == nil || *g.Temp != 54 {
 		t.Errorf("mauvaise lecture : %+v", g)
 	}
 	if g.MemUsed != 2048<<20 || g.MemTotal != 12282<<20 {

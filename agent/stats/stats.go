@@ -17,11 +17,11 @@ type Snapshot struct {
 }
 
 type GPU struct {
-	Name     string  `json:"name"`
-	Usage    float64 `json:"usage"` // %
-	MemUsed  uint64  `json:"memUsed"`
-	MemTotal uint64  `json:"memTotal"`
-	Temp     float64 `json:"temp"` // °C
+	Name     string   `json:"name"`
+	Usage    float64  `json:"usage"` // %
+	MemUsed  uint64   `json:"memUsed"`
+	MemTotal uint64   `json:"memTotal"`
+	Temp     *float64 `json:"temp"` // °C, nil si indisponible
 }
 
 // Collect lit l'état courant. Le CPU est mesuré depuis l'appel précédent.
