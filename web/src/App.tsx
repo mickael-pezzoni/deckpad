@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import type { Swiper as SwiperInstance } from 'swiper'
 import 'swiper/css'
@@ -19,11 +19,10 @@ export default function App() {
       .catch(() => setPaired(false))
   }, [])
 
-  if (paired === null) return null
-  if (!paired) return <PairingScreen onPaired={() => setPaired(true)} />
-
-  return (
-    <AppShell pages={pages} current={current} onNavigate={(i) => swiper?.slideTo(i)}>
+  // Les pages ne dépendent pas de la page active : on les crée une seule fois pour que
+  // changer de page (swipe ou menu) ne re-rende que le menu, pas les 7 pages en pleine animation.
+  const deck = useMemo(
+    () => (
       <Swiper className="deck" onSwiper={setSwiper} onSlideChange={(s) => setCurrent(s.activeIndex)}>
         {pages.map(({ id, title, Component }) => (
           <SwiperSlide key={id}>
@@ -33,6 +32,16 @@ export default function App() {
           </SwiperSlide>
         ))}
       </Swiper>
+    ),
+    [],
+  )
+
+  if (paired === null) return null
+  if (!paired) return <PairingScreen onPaired={() => setPaired(true)} />
+
+  return (
+    <AppShell pages={pages} current={current} onNavigate={(i) => swiper?.slideTo(i)}>
+      {deck}
     </AppShell>
   )
 }
