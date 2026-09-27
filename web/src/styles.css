@@ -330,6 +330,73 @@ body,
   font-size: 18px;
 }
 
+/* Page Système : 4 très gros boutons qui remplissent l'écran. */
+.actions {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--gap);
+}
+
+.action {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  overflow: hidden;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--tile);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+}
+
+.action:active {
+  background: var(--tile-active);
+}
+
+.action svg {
+  position: relative;
+  color: var(--accent);
+}
+
+.action-danger svg {
+  color: var(--critical-text);
+}
+
+.action-label {
+  position: relative;
+  font-size: clamp(22px, 4vh, 30px);
+  font-weight: 600;
+}
+
+.action-hint {
+  position: relative;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* Jauge de l'appui long : se remplit de bas en haut pendant --hold-ms. */
+.action-progress {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--critical) 30%, transparent);
+  transform: scaleY(0);
+  transform-origin: bottom;
+}
+
+.action.holding .action-progress {
+  transform: scaleY(1);
+  transition: transform var(--hold-ms) linear;
+}
+
 .coming-soon {
   color: var(--muted);
   font-size: 20px;

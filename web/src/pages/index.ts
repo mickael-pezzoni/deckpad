@@ -4,6 +4,7 @@ import { ComingSoon } from './ComingSoon'
 import { StatsPage } from './StatsPage'
 import { ProcessPage } from './ProcessPage'
 import { NetworkPage } from './NetworkPage'
+import { SystemPage } from './SystemPage'
 
 export type Page = { id: string; title: string; Component: ComponentType }
 
@@ -14,6 +15,6 @@ export const pages: Page[] = [
   { id: 'process', title: 'Processus', Component: ProcessPage },
   { id: 'files', title: 'Fichiers', Component: ComingSoon },
   { id: 'network', title: 'Réseau', Component: NetworkPage },
-  { id: 'system', title: 'Système', Component: ComingSoon },
+  { id: 'system', title: 'Système', Component: SystemPage },
   { id: 'settings', title: 'Paramètres', Component: ComingSoon },
 ]
