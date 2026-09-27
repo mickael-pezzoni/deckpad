@@ -17,6 +17,7 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/media"
 	"github.com/mickael-pezzoni/deckpad/agent/network"
 	"github.com/mickael-pezzoni/deckpad/agent/process"
+	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
 	"github.com/mickael-pezzoni/deckpad/agent/sysinfo"
 	"github.com/mickael-pezzoni/deckpad/agent/system"
@@ -25,7 +26,7 @@ import (
 
 // New construit le routeur : /api/* pour les données, tout le reste pour l'appli.
 // Seuls les appareils appairés dans store accèdent à l'API.
-func New(store *auth.Store) http.Handler {
+func New(store *auth.Store, keys *shortcuts.Store) http.Handler {
 	procs := process.NewLister()
 
 	mux := http.NewServeMux()
@@ -52,6 +53,9 @@ func New(store *auth.Store) http.Handler {
 	mux.Handle("GET /api/media/stream", stream(live.NewHub(time.Second, media.Collect)))
 	mux.HandleFunc("POST /api/media/{action}", handleMediaControl)
 	mux.HandleFunc("GET /api/media/cover", handleMediaCover)
+	mux.HandleFunc("GET /api/shortcuts", handleShortcuts(keys))
+	mux.HandleFunc("PUT /api/shortcuts", handleShortcutsSave(keys))
+	mux.HandleFunc("POST /api/shortcuts/{id}/run", handleShortcutRun(keys))
 	mux.Handle("/", appHandler())
 	return requireToken(store, mux)
 }
@@ -204,6 +208,58 @@ func handleMediaCover(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "max-age=86400")
 	w.Write(data)
+}
+
+type shortcutsReply struct {
+	Shortcuts []shortcuts.Shortcut   `json:"shortcuts"`
+	Keys      shortcuts.Availability `json:"keys"`
+	Capture   shortcuts.Availability `json:"capture"`
+}
+
+func newShortcutsReply(list []shortcuts.Shortcut) shortcutsReply {
+	return shortcutsReply{list, shortcuts.KeysAvailable(), shortcuts.CaptureAvailable()}
+}
+
+func handleShortcuts(keys *shortcuts.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, newShortcutsReply(keys.List()))
+	}
+}
+
+// handleShortcutsSave remplace toute la liste (ajout, modification, suppression).
+func handleShortcutsSave(keys *shortcuts.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var list []shortcuts.Shortcut
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&list); err != nil {
+			http.Error(w, "requête invalide", http.StatusBadRequest)
+			return
+		}
+		saved, err := keys.Replace(list)
+		switch {
+		case errors.Is(err, shortcuts.ErrInvalid):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case err != nil:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		default:
+			writeJSON(w, newShortcutsReply(saved))
+		}
+	}
+}
+
+func handleShortcutRun(keys *shortcuts.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		err := keys.Run(id)
+		switch {
+		case errors.Is(err, shortcuts.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case err != nil:
+			log.Printf("raccourci %s : %v", id, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		default:
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}
 }
 
 func handleSystem(w http.ResponseWriter, r *http.Request) {

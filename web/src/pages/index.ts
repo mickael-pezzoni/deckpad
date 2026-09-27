@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Activity, Folder, ListTree, Monitor, Music, Network, Power, Settings, Volume2, type LucideIcon } from 'lucide-react'
+import { Activity, Folder, ListTree, Monitor, Music, Network, Power, Settings, Volume2, Zap, type LucideIcon } from 'lucide-react'
 import { InfoPage } from './InfoPage'
 import { ComingSoon } from './ComingSoon'
 import { StatsPage } from './StatsPage'
@@ -9,6 +9,7 @@ import { SystemPage } from './SystemPage'
 import { FilesPage } from './FilesPage'
 import { AudioPage } from './AudioPage'
 import { MediaPage } from './MediaPage'
+import { ShortcutsPage } from './ShortcutsPage'
 
 export type Page = { id: string; title: string; icon: LucideIcon; Component: ComponentType }
 
@@ -21,6 +22,7 @@ export const pages: Page[] = [
   { id: 'network', title: 'Réseau', icon: Network, Component: NetworkPage },
   { id: 'audio', title: 'Audio', icon: Volume2, Component: AudioPage },
   { id: 'media', title: 'Médias', icon: Music, Component: MediaPage },
+  { id: 'shortcuts', title: 'Raccourcis', icon: Zap, Component: ShortcutsPage },
   { id: 'system', title: 'Système', icon: Power, Component: SystemPage },
   { id: 'settings', title: 'Paramètres', icon: Settings, Component: ComingSoon },
 ]
