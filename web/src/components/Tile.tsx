@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
 
 export type Tone = 'warning' | 'critical'
 
 type Props = {
   label: string
+  icon?: LucideIcon
   children: ReactNode
   detail?: ReactNode
   chart?: ReactNode
@@ -12,14 +14,21 @@ type Props = {
   onClick?: () => void
 }
 
-export function Tile({ label, children, detail, chart, wide, badge, onClick }: Props) {
+export function Tile({ label, icon: Icon, children, detail, chart, wide, badge, onClick }: Props) {
   const className = ['tile', wide && 'tile-wide', badge && `tile-${badge.tone}`, onClick && 'tile-button']
     .filter(Boolean)
     .join(' ')
   const content = (
     <>
       <span className="tile-head">
-        <span className="tile-label">{label}</span>
+        <span className="tile-label">
+          {Icon && (
+            <span className="tile-icon">
+              <Icon size={20} strokeWidth={2} aria-hidden />
+            </span>
+          )}
+          {label}
+        </span>
         {badge && <span className={`badge badge-${badge.tone}`}>{badge.text}</span>}
       </span>
       <span className="tile-value">{children}</span>

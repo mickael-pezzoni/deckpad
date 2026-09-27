@@ -28,7 +28,7 @@ func Get(ctx context.Context) (Info, error) {
 	info := Info{
 		Hostname:  h.Hostname,
 		OS:        h.Platform + " " + h.PlatformVersion,
-		UptimeSec: h.Uptime,
+		UptimeSec: uptime(ctx, h.Uptime),
 		Now:       time.Now(),
 	}
 	if u, err := user.Current(); err == nil {
