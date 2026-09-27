@@ -14,6 +14,7 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
 	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/live"
+	"github.com/mickael-pezzoni/deckpad/agent/media"
 	"github.com/mickael-pezzoni/deckpad/agent/network"
 	"github.com/mickael-pezzoni/deckpad/agent/process"
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
@@ -48,6 +49,9 @@ func New(store *auth.Store) http.Handler {
 	mux.HandleFunc("POST /api/audio/mute", handleAudioMute)
 	mux.HandleFunc("POST /api/audio/output", handleAudioOutput)
 	mux.HandleFunc("GET /api/audio/icon", handleAudioIcon)
+	mux.Handle("GET /api/media/stream", stream(live.NewHub(time.Second, media.Collect)))
+	mux.HandleFunc("POST /api/media/{action}", handleMediaControl)
+	mux.HandleFunc("GET /api/media/cover", handleMediaCover)
 	mux.Handle("/", appHandler())
 	return requireToken(store, mux)
 }
@@ -173,6 +177,33 @@ func handleAudioIcon(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", icon.ContentType)
 	w.Header().Set("Cache-Control", "max-age=86400")
 	w.Write(icon.Data)
+}
+
+func handleMediaControl(w http.ResponseWriter, r *http.Request) {
+	err := media.Control(r.Context(), media.Action(r.PathValue("action")))
+	switch {
+	case errors.Is(err, media.ErrBadAction):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, media.ErrNoPlayer):
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case err != nil:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// handleMediaCover sert la pochette du morceau en cours ; l'adresse change avec
+// le morceau (?v=…), elle peut donc rester en cache.
+func handleMediaCover(w http.ResponseWriter, r *http.Request) {
+	data, contentType, err := media.Cover(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Write(data)
 }
 
 func handleSystem(w http.ResponseWriter, r *http.Request) {
