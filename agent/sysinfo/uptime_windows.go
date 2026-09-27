@@ -2,52 +2,35 @@ package sysinfo
 
 import (
 	"context"
-	"os/user"
-	"strings"
+	"log"
+	"os/exec"
+	"syscall"
 	"time"
-
-	"github.com/shirou/gopsutil/v4/process"
 )
 
-// uptime corrige la durée d'allumage de Windows. Avec le « démarrage rapide »
-// (activé par défaut), « Arrêter » met le noyau en veille prolongée au lieu de
-// l'éteindre : le compteur système continue sur plusieurs jours. La session de
-// l'utilisateur, elle, est bien refermée à chaque arrêt : on prend donc le plus
-// ancien de ses processus comme heure d'allumage.
+// uptime corrige la durée d'allumage de Windows. Le compteur système ne repart
+// pas à zéro avec le « démarrage rapide » (activé par défaut : « Arrêter » met le
+// noyau en veille prolongée) ni après une mise en veille. On lit donc dans le
+// journal Système le dernier démarrage ou réveil (voir lastStartQuery).
 func uptime(ctx context.Context, hostUptime uint64) uint64 {
-	start, ok := sessionStart(ctx)
-	if !ok {
+	start, err := lastStart(ctx)
+	if err != nil {
+		log.Printf("durée d'allumage : journal d'événements illisible (%v), compteur système utilisé", err)
 		return hostUptime
 	}
-	since := uint64(time.Since(start).Seconds())
+	since := uint64(max(0, time.Since(start).Seconds()))
 	return min(since, hostUptime)
 }
 
-func sessionStart(ctx context.Context) (time.Time, bool) {
-	me, err := user.Current()
+func lastStart(ctx context.Context) (time.Time, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "wevtutil", "qe", "System",
+		"/q:"+lastStartQuery, "/c:1", "/rd:true", "/f:xml")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000} // CREATE_NO_WINDOW
+	out, err := cmd.Output()
 	if err != nil {
-		return time.Time{}, false
+		return time.Time{}, err
 	}
-	procs, err := process.ProcessesWithContext(ctx)
-	if err != nil {
-		return time.Time{}, false
-	}
-	var earliest int64
-	for _, p := range procs {
-		owner, err := p.UsernameWithContext(ctx)
-		if err != nil || !strings.EqualFold(owner, me.Username) {
-			continue
-		}
-		ms, err := p.CreateTimeWithContext(ctx)
-		if err != nil || ms <= 0 {
-			continue
-		}
-		if earliest == 0 || ms < earliest {
-			earliest = ms
-		}
-	}
-	if earliest == 0 {
-		return time.Time{}, false
-	}
-	return time.UnixMilli(earliest), true
+	return parseEventTime(string(out))
 }
