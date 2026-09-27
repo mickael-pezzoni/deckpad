@@ -1495,3 +1495,260 @@ body,
     animation-duration: 3s;
   }
 }
+
+/* ---- Processus : mosaïque ---- */
+.process-bar {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.process-total {
+  padding-top: 20px;
+  color: var(--muted);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+/* Seule la mosaïque défile (sans barre) si l'écran est trop petit. Sur tablette,
+   le haut prend ce qui reste après 2 rangées de petites tuiles : les 12 tiennent. */
+.mosaic {
+  --small-h: 92px;
+  --mosaic-gap: 18px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--mosaic-gap);
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.mosaic::-webkit-scrollbar {
+  display: none;
+}
+
+.mosaic-top {
+  display: grid;
+  flex: none;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mosaic-gap);
+  height: max(300px, calc(100% - 2 * (var(--small-h) + var(--mosaic-gap))));
+}
+
+.mosaic-medium {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: var(--mosaic-gap);
+  min-height: 0;
+}
+
+.mosaic-small {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: var(--small-h);
+  gap: var(--mosaic-gap);
+}
+
+.process-tile {
+  justify-content: center;
+  min-width: 0;
+}
+
+.process-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.process-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--muted);
+}
+
+.process-icon img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.process-name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.process-title {
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3; /* évite de couper les « _ » */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.process-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.process-sub > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.process-small {
+  padding: 14px 18px;
+}
+
+.process-small .process-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.process-small .process-icon img {
+  width: 26px;
+  height: 26px;
+}
+
+.process-small .process-title {
+  font-size: 18px;
+}
+
+.process-small .process-sub {
+  font-size: 14px;
+}
+
+.process-sub .badge {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.process-medium {
+  flex-direction: row;
+  align-items: center;
+  padding: 0 22px;
+}
+
+.process-medium .process-head {
+  flex: 1;
+}
+
+.process-medium .process-icon {
+  width: 52px;
+  height: 52px;
+}
+
+.process-medium .process-icon img {
+  width: 34px;
+  height: 34px;
+}
+
+.process-value {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.process-value strong {
+  color: var(--text);
+  font-size: 28px;
+}
+
+.process-large {
+  gap: 24px;
+  padding: 32px;
+}
+
+.process-large .process-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+}
+
+.process-large .process-icon img,
+.process-large .process-icon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.process-large .process-title {
+  font-size: 32px;
+}
+
+.process-large .process-sub {
+  font-size: 17px;
+}
+
+.process-large .badge {
+  align-self: flex-start;
+  padding: 6px 14px;
+  font-size: 16px;
+}
+
+.process-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+}
+
+.process-figure {
+  display: flex;
+  flex-direction: column;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.process-figure strong {
+  color: var(--text);
+  font-size: clamp(36px, min(8vh, 10vw), 64px);
+  line-height: 1.1;
+}
+
+.process-figure small {
+  font-size: 0.5em;
+}
+
+/* Écran étroit (téléphone) : la grande en haut, les moyennes dessous, petites par 2. */
+@media (max-width: 760px) {
+  .process-total {
+    display: none;
+  }
+
+  .mosaic-top {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .mosaic-medium {
+    grid-auto-rows: 84px;
+  }
+
+  .mosaic-small {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .process-large {
+    padding: 24px;
+  }
+}
