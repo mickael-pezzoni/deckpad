@@ -16,15 +16,26 @@ export function InfoPage() {
   const [error, setError] = useState(false)
   const now = usePcClock(info)
 
+  // Rechargé chaque minute : suit un redémarrage du PC ou un changement de session.
   useEffect(() => {
-    fetch('/api/info')
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(setInfo)
-      .catch(() => setError(true))
+    const load = () =>
+      fetch('/api/info')
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((i) => {
+          setInfo(i)
+          setError(false)
+        })
+        .catch(() => setError(true))
+    load()
+    const id = setInterval(load, 60_000)
+    return () => clearInterval(id)
   }, [])
 
   if (error) return <p className="coming-soon">PC injoignable</p>
   if (!info || !now) return <p className="coming-soon">Chargement…</p>
+
+  // La durée avance avec l'horloge, entre deux rechargements.
+  const uptime = info.uptimeSec + Math.max(0, (now.getTime() - new Date(info.now).getTime()) / 1000)
 
   return (
     <div className="grid">
@@ -37,7 +48,7 @@ export function InfoPage() {
       <Tile label="Utilisateur" icon={User}>{shortUser(info.username)}</Tile>
       <Tile label="Nom du PC" icon={Monitor}>{info.hostname}</Tile>
       <Tile label="Système" icon={AppWindow}>{info.os}</Tile>
-      <Tile label="Allumé depuis" icon={Power}>{formatUptime(info.uptimeSec)}</Tile>
+      <Tile label="Allumé depuis" icon={Power}>{formatUptime(uptime)}</Tile>
       <Tile label="Processeur" icon={Cpu}>{shortCPU(info.cpu)}</Tile>
     </div>
   )
