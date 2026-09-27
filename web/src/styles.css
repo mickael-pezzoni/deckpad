@@ -151,7 +151,6 @@ body,
 .tile {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 12px;
   min-height: 0;
   overflow: hidden;
@@ -251,6 +250,16 @@ body,
   color: var(--critical-text);
 }
 
+/* Valeur + détail : toujours centrés verticalement entre l'en-tête et le bas (ou la courbe). */
+.tile-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+}
+
 .tile-value {
   flex: none; /* le nom ne doit jamais être écrasé par le reste de la tuile */
   display: -webkit-box;
@@ -268,10 +277,9 @@ body,
 }
 
 .sparkline {
-  flex: 1 1 0;
+  flex: 0 1 96px; /* hauteur fixe en bas de la carte, rétrécit si l'écran est bas */
   width: 100%;
-  min-height: 0;
-  max-height: 96px;
+  min-height: 32px;
 }
 
 .sparkline-line {
