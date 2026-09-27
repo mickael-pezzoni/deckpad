@@ -6,6 +6,7 @@ export type Tone = 'warning' | 'critical'
 type Props = {
   label: string
   icon?: LucideIcon
+  iconImage?: ReactNode // à la place d'icon, ex. l'icône d'un programme
   children: ReactNode
   detail?: ReactNode
   chart?: ReactNode
@@ -14,7 +15,7 @@ type Props = {
   onClick?: () => void
 }
 
-export function Tile({ label, icon: Icon, children, detail, chart, wide, badge, onClick }: Props) {
+export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wide, badge, onClick }: Props) {
   const className = ['tile', wide && 'tile-wide', badge && `tile-${badge.tone}`, onClick && 'tile-button']
     .filter(Boolean)
     .join(' ')
@@ -22,10 +23,14 @@ export function Tile({ label, icon: Icon, children, detail, chart, wide, badge, 
     <>
       <span className="tile-head">
         <span className="tile-label">
-          {Icon && (
-            <span className="tile-icon">
-              <Icon size={20} strokeWidth={2} aria-hidden />
-            </span>
+          {iconImage ? (
+            <span className="tile-icon tile-icon-image">{iconImage}</span>
+          ) : (
+            Icon && (
+              <span className="tile-icon">
+                <Icon size={20} strokeWidth={2} aria-hidden />
+              </span>
+            )
           )}
           {label}
         </span>

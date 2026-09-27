@@ -27,6 +27,7 @@ func New() http.Handler {
 	mux.Handle("GET /api/stats/stream", stream(live.NewHub(time.Second, stats.Collect)))
 	mux.Handle("GET /api/processes/stream", stream(live.NewHub(2*time.Second, procs.Apps)))
 	mux.HandleFunc("POST /api/processes/kill", handleKill(procs))
+	mux.HandleFunc("GET /api/processes/icon", handleIcon(procs))
 	mux.Handle("GET /api/network/stream", stream(live.NewHub(time.Second, network.NewMonitor().Collect)))
 	mux.HandleFunc("GET /api/network/public-ip", handlePublicIP)
 	mux.Handle("/", appHandler())
@@ -49,6 +50,19 @@ func handlePublicIP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, map[string]string{"ip": ip})
+}
+
+func handleIcon(procs *process.Lister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		icon, err := procs.Icon(r.Context(), r.URL.Query().Get("name"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", icon.ContentType)
+		w.Header().Set("Cache-Control", "max-age=86400")
+		w.Write(icon.Data)
+	}
 }
 
 func handleKill(procs *process.Lister) http.HandlerFunc {

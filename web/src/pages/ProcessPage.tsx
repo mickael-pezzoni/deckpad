@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Tile, type Tone } from '../components/Tile'
 import { Confirm } from '../components/Confirm'
+import { AppIcon } from '../components/AppIcon'
 import { useEventStream } from '../hooks/useEventStream'
 
 type App = { name: string; cpu: number; ram: number; count: number }
@@ -54,6 +55,7 @@ export function ProcessPage() {
             key={app.name}
             label={app.count > 1 ? `${app.count} processus` : '1 processus'}
             detail={`CPU ${app.cpu.toFixed(1).replace('.', ',')} % · ${mb(app.ram)}`}
+            iconImage={<AppIcon name={app.name} />}
             badge={usageBadge(app)}
             onClick={() => setTarget(app)}
           >
