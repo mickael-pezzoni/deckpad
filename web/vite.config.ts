@@ -18,6 +18,7 @@ export default defineConfig({
   build: { outDir, emptyOutDir: true },
   server: {
     host: true, // accessible depuis la tablette sur le réseau local
-    proxy: { '/api': 'http://localhost:8420' },
+    // xfwd : l'agent voit que la requête vient de la tablette, pas du PC (voir localOnly).
+    proxy: { '/api': { target: 'http://localhost:8420', xfwd: true } },
   },
 })

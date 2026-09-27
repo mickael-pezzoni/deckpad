@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deckpad · appairage</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #0f1115; color: #f2f4f8;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; user-select: none; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 24px; box-sizing: border-box; text-align: center; overflow: hidden; }
+  h1 { margin: 0; font-size: 18px; font-weight: 500; color: #8a93a3; }
+  .code { display: flex; gap: 10px; }
+  .code span { width: 48px; height: 64px; display: grid; place-items: center; border-radius: 12px;
+    background: #1b1f27; font-size: 38px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .code span:nth-child(3) { margin-right: 12px; }
+  .bar { width: 280px; height: 6px; border-radius: 3px; background: #1b1f27; overflow: hidden; }
+  .bar div { height: 100%; background: #4f8cff; transition: width 1s linear; }
+  p { margin: 0; color: #8a93a3; font-size: 15px; }
+  .big { font-size: 56px; line-height: 1; }
+  .ok { color: #5cc98a; }
+  .warn { color: #f2d49b; }
+</style>
+</head>
+<body>
+  <h1>Chargement…</h1>
+<script>
+  const TTL = 5 * 60 * 1000
+  const body = document.body
+  let closing = false
+
+  function show(html) { body.innerHTML = html }
+
+  function closeSoon(ms) {
+    if (closing) return
+    closing = true
+    setTimeout(() => {
+      window.close()
+      // Si le navigateur refuse la fermeture automatique :
+      document.querySelector('p').textContent = 'Tu peux fermer cette fenêtre.'
+    }, ms)
+  }
+
+  async function tick() {
+    let s
+    try {
+      s = await (await fetch('/api/pair/code', { cache: 'no-store' })).json()
+    } catch {
+      show('<h1>deckpad ne répond plus</h1><p>L\'agent a été arrêté.</p>')
+      return
+    }
+    if (s.state === 'pending') {
+      closing = false
+      const left = Math.max(0, new Date(s.expires) - Date.now())
+      const min = Math.floor(left / 60000), sec = String(Math.floor(left / 1000) % 60).padStart(2, '0')
+      show(`<h1>Code à saisir sur la tablette</h1>
+        <div class="code">${[...s.code].map((d) => `<span>${d}</span>`).join('')}</div>
+        <div class="bar"><div style="width:${(left / TTL) * 100}%"></div></div>
+        <p>Expire dans ${min}:${sec}</p>`)
+    } else if (s.state === 'paired') {
+      show('<div class="big ok">✓</div><h1>Tablette appairée</h1><p>Cette fenêtre va se fermer.</p>')
+      closeSoon(2500)
+    } else if (s.state === 'locked') {
+      show('<div class="big warn">!</div><h1>Trop d\'essais</h1><p>Recommence depuis la tablette dans quelques minutes.</p>')
+    } else {
+      show('<h1>Code expiré</h1><p>Recommence depuis la tablette.</p>')
+      closeSoon(4000)
+    }
+  }
+
+  tick()
+  setInterval(tick, 1000)
+</script>
+</body>
+</html>

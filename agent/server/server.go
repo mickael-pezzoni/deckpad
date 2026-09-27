@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mickael-pezzoni/deckpad/agent/auth"
 	"github.com/mickael-pezzoni/deckpad/agent/live"
 	"github.com/mickael-pezzoni/deckpad/agent/network"
 	"github.com/mickael-pezzoni/deckpad/agent/process"
@@ -20,10 +21,16 @@ import (
 )
 
 // New construit le routeur : /api/* pour les données, tout le reste pour l'appli.
-func New() http.Handler {
+// Seuls les appareils appairés dans store accèdent à l'API.
+func New(store *auth.Store) http.Handler {
 	procs := process.NewLister()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/pair/status", handlePairStatus(store))
+	mux.HandleFunc("POST /api/pair/start", handlePairStart(store))
+	mux.HandleFunc("POST /api/pair/confirm", handlePairConfirm(store))
+	mux.HandleFunc("GET /api/pair/code", handlePairCode(store))
+	mux.HandleFunc("GET /pair-code", localOnly(handlePairWindow))
 	mux.HandleFunc("GET /api/info", handleInfo)
 	mux.Handle("GET /api/stats/stream", stream(live.NewHub(time.Second, stats.Collect)))
 	mux.Handle("GET /api/processes/stream", stream(live.NewHub(2*time.Second, procs.Apps)))
@@ -33,7 +40,7 @@ func New() http.Handler {
 	mux.HandleFunc("GET /api/network/public-ip", handlePublicIP)
 	mux.HandleFunc("POST /api/system/{action}", handleSystem)
 	mux.Handle("/", appHandler())
-	return mux
+	return requireToken(store, mux)
 }
 
 func handleInfo(w http.ResponseWriter, r *http.Request) {
