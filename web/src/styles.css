@@ -148,6 +148,15 @@ body,
   font-size: clamp(32px, 6vh, 48px);
 }
 
+/* Stats au-dessus d'un seuil : le chiffre prend la couleur du niveau. */
+.grid-large .tile-warning .tile-value {
+  color: var(--warning-text);
+}
+
+.grid-large .tile-critical .tile-value {
+  color: var(--critical-text);
+}
+
 .tile {
   display: flex;
   flex-direction: column;

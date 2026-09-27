@@ -1,6 +1,6 @@
 import { Cpu, Gauge, Gpu, MemoryStick } from 'lucide-react'
-import { Tile } from '../components/Tile'
-import { Sparkline } from '../components/Sparkline'
+import { Tile, type Tone } from '../components/Tile'
+import { Sparkline, type Thresholds } from '../components/Sparkline'
 import { useStatsStream, type Stats } from '../hooks/useStatsStream'
 import { Loader } from '../components/Loader'
 
@@ -17,7 +17,8 @@ export function StatsPage() {
       <Tile
         label="CPU"
         icon={Cpu}
-        chart={<Sparkline values={history.map((s) => s.cpu)} />}
+        badge={level(latest.cpu, LOAD)}
+        chart={<Sparkline values={history.map((s) => s.cpu)} thresholds={LOAD} />}
       >
         {Math.round(latest.cpu)} %
       </Tile>
@@ -25,7 +26,8 @@ export function StatsPage() {
         label="RAM"
         icon={MemoryStick}
         detail={`${gb(latest.ramUsed)} / ${gb(latest.ramTotal)} Go`}
-        chart={<Sparkline values={history.map(ramPct)} />}
+        badge={level(ramPct(latest), RAM)}
+        chart={<Sparkline values={history.map(ramPct)} thresholds={RAM} />}
       >
         {Math.round(ramPct(latest))} %
       </Tile>
@@ -33,7 +35,8 @@ export function StatsPage() {
         label="GPU"
         icon={Gpu}
         detail={gpu ? gpuDetail(gpu) : 'Non détecté'}
-        chart={gpu && <Sparkline values={history.map((s) => s.gpu?.usage ?? 0)} />}
+        badge={gpu ? level(gpu.usage, LOAD) : undefined}
+        chart={gpu && <Sparkline values={history.map((s) => s.gpu?.usage ?? 0)} thresholds={LOAD} />}
       >
         {gpu ? `${Math.round(gpu.usage)} %` : '—'}
       </Tile>
@@ -43,6 +46,16 @@ export function StatsPage() {
       {!connected && <p className="coming-soon">Connexion perdue, reconnexion…</p>}
     </div>
   )
+}
+
+// Seuils en % : couleur (fond teinté, chiffre, courbe) + badge texte, jamais la couleur seule.
+const LOAD: Thresholds = { warning: 70, critical: 90 }
+const RAM: Thresholds = { warning: 80, critical: 90 }
+
+function level(value: number, t: Thresholds): { text: string; tone: Tone } | undefined {
+  if (value >= t.critical) return { text: 'Très élevé', tone: 'critical' }
+  if (value >= t.warning) return { text: 'Élevé', tone: 'warning' }
+  return undefined
 }
 
 function gpuDetail(gpu: NonNullable<Stats['gpu']>) {
