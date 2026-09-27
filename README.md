@@ -41,7 +41,7 @@ Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recha
 | Page | État |
 |---|---|
 | Infos PC | ✅ |
-| Stats | à venir |
+| Stats | ✅ CPU, RAM, GPU toutes marques (FPS et température GPU AMD sous Windows à venir) |
 | Processus | à venir |
 | Fichiers | à venir |
 | Réseau | à venir |

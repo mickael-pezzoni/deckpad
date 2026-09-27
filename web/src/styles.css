@@ -53,6 +53,23 @@ body,
   gap: var(--gap);
 }
 
+/* Pages de mesures : 2 colonnes, chiffres lisibles d'un coup d'œil. */
+.grid-large {
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+}
+
+.grid-large .tile {
+  min-height: 240px;
+}
+
+.grid-large .tile-value {
+  font-size: 48px;
+}
+
+.grid-large .sparkline {
+  height: 72px;
+}
+
 .tile {
   display: flex;
   flex-direction: column;
@@ -81,6 +98,29 @@ body,
   font-size: 28px;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+.tile-detail {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.sparkline {
+  width: 100%;
+  height: 48px;
+}
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+.sparkline-area {
+  fill: var(--accent);
+  opacity: 0.15;
 }
 
 .coming-soon {
