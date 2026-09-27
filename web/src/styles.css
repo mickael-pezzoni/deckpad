@@ -424,3 +424,119 @@ body,
     grid-column: span 1;
   }
 }
+
+/* Appairage : pavé numérique plein écran, sans défilement. */
+.pairing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(32px, 8vw, 96px);
+  height: 100%;
+  overflow: hidden;
+  padding: 32px 40px;
+}
+
+.pairing-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.pairing-icon {
+  color: var(--accent);
+}
+
+.pairing h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.pairing-message {
+  min-height: 2.6em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.pairing-message.is-error {
+  color: var(--critical-text);
+}
+
+.pin {
+  display: flex;
+  gap: 16px;
+}
+
+.pin span {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.pin span.filled {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.shake {
+  animation: shake 0.4s;
+}
+
+@keyframes shake {
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+
+.keypad {
+  --key: clamp(64px, min(15vh, 12vw), 104px);
+  display: grid;
+  grid-template-columns: repeat(3, var(--key));
+  grid-auto-rows: var(--key);
+  gap: clamp(12px, 2.5vh, 20px);
+}
+
+.key {
+  border: none;
+  border-radius: var(--radius);
+  background: var(--tile);
+  color: var(--text);
+  font: inherit;
+  font-size: calc(var(--key) * 0.38);
+  font-weight: 500;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.key:active:not(:disabled) {
+  background: var(--tile-active);
+}
+
+.key-muted {
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.key:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Portrait : le pavé passe sous le texte. */
+@media (orientation: portrait) {
+  .pairing {
+    flex-direction: column;
+    gap: 40px;
+  }
+  .keypad {
+    --key: clamp(64px, min(11vh, 22vw), 112px);
+  }
+}

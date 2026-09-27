@@ -12,7 +12,13 @@ Piloter son PC depuis une tablette pendant qu'on joue : des pages par thème, en
 
 Au premier lancement, Windows demande d'autoriser l'accès réseau : accepter pour les réseaux privés.
 
-> ⚠️ Pas encore d'authentification : à n'utiliser que sur un réseau local de confiance.
+### Appairer une tablette
+
+La première fois, la tablette affiche un pavé numérique et le PC ouvre une petite fenêtre avec un code à 6 chiffres (aussi écrit dans la console). Taper ce code sur la tablette : elle reçoit une clé et n'aura plus à le refaire.
+
+- Le code expire après 5 minutes et se bloque après 5 erreurs.
+- Chaque appareil a sa propre clé. Le PC n'en garde que l'empreinte, dans `%APPDATA%\deckpad\devices.json` (Windows) ou `~/.config/deckpad/devices.json` (Linux). Supprimer ce fichier désappaire tout.
+- La fenêtre s'ouvre avec Edge ou Chrome (Chromium sous Linux), sinon dans le navigateur par défaut.
 
 ## Construire l'exe
 
