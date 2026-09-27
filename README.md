@@ -52,5 +52,6 @@ Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recha
 | Fichiers | à venir |
 | Réseau | ✅ débit en direct, latence, IP locale et publique, type de connexion |
 | Audio | ✅ volume général et par appli, micro, choix de la sortie (casque, enceintes…). Sous Linux : `pactl` requis (fourni avec PulseAudio / PipeWire) |
+| Médias | ✅ titre, artiste, pochette, lecture/pause, suivant/précédent (Spotify, YouTube dans le navigateur, VLC…). Windows 10 1809+ ; sous Linux, tout lecteur compatible MPRIS |
 | Système | ✅ verrouiller, veille, redémarrer, éteindre (appui long) |
 | Paramètres | à venir |
