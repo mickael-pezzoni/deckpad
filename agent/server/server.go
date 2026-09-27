@@ -15,6 +15,7 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/process"
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
 	"github.com/mickael-pezzoni/deckpad/agent/sysinfo"
+	"github.com/mickael-pezzoni/deckpad/agent/system"
 	"github.com/mickael-pezzoni/deckpad/agent/webdist"
 )
 
@@ -30,6 +31,7 @@ func New() http.Handler {
 	mux.HandleFunc("GET /api/processes/icon", handleIcon(procs))
 	mux.Handle("GET /api/network/stream", stream(live.NewHub(time.Second, network.NewMonitor().Collect)))
 	mux.HandleFunc("GET /api/network/public-ip", handlePublicIP)
+	mux.HandleFunc("POST /api/system/{action}", handleSystem)
 	mux.Handle("/", appHandler())
 	return mux
 }
@@ -63,6 +65,16 @@ func handleIcon(procs *process.Lister) http.HandlerFunc {
 		w.Header().Set("Cache-Control", "max-age=86400")
 		w.Write(icon.Data)
 	}
+}
+
+func handleSystem(w http.ResponseWriter, r *http.Request) {
+	action := system.Action(r.PathValue("action"))
+	if err := system.Run(action); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Printf("action système : %s", action)
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func handleKill(procs *process.Lister) http.HandlerFunc {
