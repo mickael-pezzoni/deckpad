@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mickael-pezzoni/deckpad/agent/live"
+	"github.com/mickael-pezzoni/deckpad/agent/network"
 	"github.com/mickael-pezzoni/deckpad/agent/process"
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
 	"github.com/mickael-pezzoni/deckpad/agent/sysinfo"
@@ -26,6 +27,8 @@ func New() http.Handler {
 	mux.Handle("GET /api/stats/stream", stream(live.NewHub(time.Second, stats.Collect)))
 	mux.Handle("GET /api/processes/stream", stream(live.NewHub(2*time.Second, procs.Apps)))
 	mux.HandleFunc("POST /api/processes/kill", handleKill(procs))
+	mux.Handle("GET /api/network/stream", stream(live.NewHub(time.Second, network.NewMonitor().Collect)))
+	mux.HandleFunc("GET /api/network/public-ip", handlePublicIP)
 	mux.Handle("/", appHandler())
 	return mux
 }
@@ -37,6 +40,15 @@ func handleInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, info)
+}
+
+func handlePublicIP(w http.ResponseWriter, r *http.Request) {
+	ip, err := network.PublicIP(r.Context())
+	if err != nil {
+		http.Error(w, "IP publique indisponible", http.StatusBadGateway)
+		return
+	}
+	writeJSON(w, map[string]string{"ip": ip})
 }
 
 func handleKill(procs *process.Lister) http.HandlerFunc {
