@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Tone } from '../components/Tile'
-import { Confirm } from '../components/Confirm'
+import { HoldButton } from '../components/HoldButton'
 import { AppIcon } from '../components/AppIcon'
 import { useEventStream } from '../hooks/useEventStream'
 import { Loader } from '../components/Loader'
@@ -11,11 +11,11 @@ type App = { name: string; cpu: number; ram: number; count: number }
 type SortKey = 'cpu' | 'ram'
 
 const SHOWN = 12
+const HOLD_MS = 1500
 
 export function ProcessPage() {
   const [apps, setApps] = useState<App[] | null>(null)
   const [sortBy, setSortBy] = useState<SortKey>('cpu')
-  const [target, setTarget] = useState<App | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
   const connected = useEventStream<App[]>('/api/processes/stream', setApps)
@@ -28,7 +28,6 @@ export function ProcessPage() {
   }, [notice])
 
   async function kill(app: App) {
-    setTarget(null)
     const r = await fetch('/api/processes/kill', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -38,6 +37,8 @@ export function ProcessPage() {
     else if (r?.status === 403) setNotice(`Impossible de fermer ${displayName(app.name)} : droits administrateur requis`)
     else setNotice(`Impossible de fermer ${displayName(app.name)}`)
   }
+
+  const tooShort = () => setNotice('Maintenir appuyé pour fermer')
 
   if (!apps) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
 
@@ -66,11 +67,11 @@ export function ProcessPage() {
       <div className="mosaic">
         {top && (
           <div className="mosaic-top">
-            <ProcessTile app={top} size="large" sortBy={sortBy} onClick={() => setTarget(top)} />
+            <ProcessTile app={top} size="large" sortBy={sortBy} onHold={() => kill(top)} onTooShort={tooShort} />
             {medium.length > 0 && (
               <div className="mosaic-medium">
                 {medium.map((app) => (
-                  <ProcessTile key={app.name} app={app} size="medium" sortBy={sortBy} onClick={() => setTarget(app)} />
+                  <ProcessTile key={app.name} app={app} size="medium" sortBy={sortBy} onHold={() => kill(app)} onTooShort={tooShort} />
                 ))}
               </div>
             )}
@@ -79,36 +80,29 @@ export function ProcessPage() {
         {small.length > 0 && (
           <div className="mosaic-small">
             {small.map((app) => (
-              <ProcessTile key={app.name} app={app} size="small" sortBy={sortBy} onClick={() => setTarget(app)} />
+              <ProcessTile key={app.name} app={app} size="small" sortBy={sortBy} onHold={() => kill(app)} onTooShort={tooShort} />
             ))}
           </div>
         )}
       </div>
       {/* Hors du carrousel : sinon « fixed » se place par rapport aux slides. */}
       {notice && createPortal(<div className="toast">{notice}</div>, document.body)}
-      {target && (
-        <Confirm
-          title={`Fermer ${displayName(target.name)} ?`}
-          message={
-            target.count > 1
-              ? `Les ${target.count} processus seront fermés. Les données non enregistrées seront perdues.`
-              : 'Les données non enregistrées seront perdues.'
-          }
-          confirmLabel="Fermer"
-          onConfirm={() => kill(target)}
-          onCancel={() => setTarget(null)}
-        />
-      )}
     </>
   )
 }
 
-type TileProps = { app: App; size: 'large' | 'medium' | 'small'; sortBy: SortKey; onClick: () => void }
+type TileProps = {
+  app: App
+  size: 'large' | 'medium' | 'small'
+  sortBy: SortKey
+  onHold: () => void
+  onTooShort: () => void
+}
 
-function ProcessTile({ app, size, sortBy, onClick }: TileProps) {
+function ProcessTile({ app, size, sortBy, onHold, onTooShort }: TileProps) {
   const badge = usageBadge(app)
   const count = app.count > 1 ? `${app.count} processus` : '1 processus'
-  const className = ['tile', 'tile-button', 'process-tile', `process-${size}`, badge && `tile-${badge.tone}`]
+  const className = ['process-tile', `process-${size}`, badge && `tile-${badge.tone}`]
     .filter(Boolean)
     .join(' ')
   const badgeEl = badge && <span className={`badge badge-${badge.tone}`}>{badge.text}</span>
@@ -128,7 +122,8 @@ function ProcessTile({ app, size, sortBy, onClick }: TileProps) {
   )
 
   return (
-    <button type="button" className={className} onClick={onClick}>
+    // Appui long pour fermer (comme Arrêter/Redémarrer) : pas de fenêtre de confirmation.
+    <HoldButton className={className} holdMs={HOLD_MS} onConfirm={onHold} onTooShort={onTooShort}>
       {head}
       {size === 'large' && (
         <>
@@ -145,7 +140,7 @@ function ProcessTile({ app, size, sortBy, onClick }: TileProps) {
           <span>{sortBy === 'cpu' ? mb(app.ram) : percent(app.cpu)}</span>
         </span>
       )}
-    </button>
+    </HoldButton>
   )
 }
 

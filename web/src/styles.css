@@ -1554,8 +1554,24 @@ body,
 }
 
 .process-tile {
+  align-items: stretch;
   justify-content: center;
   min-width: 0;
+  padding: 24px;
+  text-align: left;
+}
+
+/* Au-dessus de la jauge de l'appui long. */
+.process-tile > :not(.action-progress) {
+  position: relative;
+}
+
+.process-tile.tile-warning {
+  background: color-mix(in srgb, var(--warning) 14%, var(--tile));
+}
+
+.process-tile.tile-critical {
+  background: color-mix(in srgb, var(--critical) 16%, var(--tile));
 }
 
 .process-head {
@@ -1573,6 +1589,10 @@ body,
   height: 44px;
   border-radius: 12px;
   background: rgb(255 255 255 / 0.06);
+  color: var(--muted);
+}
+
+.process-icon svg {
   color: var(--muted);
 }
 
