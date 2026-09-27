@@ -5,6 +5,7 @@
   --text: #f2f4f8;
   --muted: #8a93a3;
   --accent: #4f8cff;
+  --danger: #d9443c;
   --gap: 24px;
   --radius: 20px;
   color-scheme: dark;
@@ -81,6 +82,14 @@ body,
   background: var(--tile);
 }
 
+.tile-button {
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .tile:active {
   background: var(--tile-active);
 }
@@ -121,6 +130,92 @@ body,
 .sparkline-area {
   fill: var(--accent);
   opacity: 0.15;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 6px;
+  border-radius: var(--radius);
+  background: var(--tile);
+}
+
+.segmented button,
+.btn {
+  min-height: 56px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button.active {
+  background: var(--tile-active);
+  color: var(--text);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.dialog {
+  width: min(520px, 100%);
+  padding: 32px;
+  border-radius: var(--radius);
+  background: var(--tile);
+}
+
+.dialog h2 {
+  margin: 0 0 12px;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.dialog p {
+  margin: 0 0 32px;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.btn {
+  min-height: 72px;
+  background: var(--tile-active);
+  color: var(--text);
+}
+
+.btn-danger {
+  background: var(--danger);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 56px;
+  z-index: 5;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 16px 24px;
+  border-radius: 14px;
+  background: var(--tile-active);
+  font-size: 18px;
 }
 
 .coming-soon {

@@ -3,12 +3,15 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/mickael-pezzoni/deckpad/agent/live"
+	"github.com/mickael-pezzoni/deckpad/agent/process"
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
 	"github.com/mickael-pezzoni/deckpad/agent/sysinfo"
 	"github.com/mickael-pezzoni/deckpad/agent/webdist"
@@ -16,9 +19,13 @@ import (
 
 // New construit le routeur : /api/* pour les données, tout le reste pour l'appli.
 func New() http.Handler {
+	procs := process.NewLister()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/info", handleInfo)
-	mux.Handle("GET /api/stats/stream", streamStats(stats.NewHub(time.Second)))
+	mux.Handle("GET /api/stats/stream", stream(live.NewHub(time.Second, stats.Collect)))
+	mux.Handle("GET /api/processes/stream", stream(live.NewHub(2*time.Second, procs.Apps)))
+	mux.HandleFunc("POST /api/processes/kill", handleKill(procs))
 	mux.Handle("/", appHandler())
 	return mux
 }
@@ -32,8 +39,30 @@ func handleInfo(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, info)
 }
 
-// streamStats pousse une mesure par seconde à la tablette (Server-Sent Events).
-func streamStats(hub *stats.Hub) http.HandlerFunc {
+func handleKill(procs *process.Lister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Name string `json:"name"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
+			http.Error(w, "nom manquant", http.StatusBadRequest)
+			return
+		}
+		n, err := procs.Kill(r.Context(), req.Name)
+		switch {
+		case errors.Is(err, process.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case err != nil:
+			http.Error(w, err.Error(), http.StatusForbidden) // souvent : droits admin requis
+		default:
+			log.Printf("processus %q fermé (%d)", req.Name, n)
+			writeJSON(w, map[string]int{"killed": n})
+		}
+	}
+}
+
+// stream pousse chaque mesure du hub à la tablette (Server-Sent Events).
+func stream[T any](hub *live.Hub[T]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
@@ -45,10 +74,10 @@ func streamStats(hub *stats.Hub) http.HandlerFunc {
 			select {
 			case <-r.Context().Done():
 				return
-			case s := <-ch:
-				data, err := json.Marshal(s)
+			case v := <-ch:
+				data, err := json.Marshal(v)
 				if err != nil {
-					log.Printf("stats JSON : %v", err)
+					log.Printf("JSON : %v", err)
 					continue
 				}
 				if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
