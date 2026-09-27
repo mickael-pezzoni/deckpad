@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ArrowDown, ArrowUp, EthernetPort, Globe, House, Timer, Wifi } from 'lucide-react'
 import { Tile } from '../components/Tile'
 import { Sparkline } from '../components/Sparkline'
 import { useEventStream } from '../hooks/useEventStream'
@@ -36,20 +37,20 @@ export function NetworkPage() {
 
   return (
     <div className="grid">
-      <Tile label="Réception" wide chart={<Sparkline values={history.map((n) => n.rxRate)} max={max} />}>
+      <Tile label="Réception" icon={ArrowDown} wide chart={<Sparkline values={history.map((n) => n.rxRate)} max={max} />}>
         {rate(net.rxRate)}
       </Tile>
-      <Tile label="Envoi" wide chart={<Sparkline values={history.map((n) => n.txRate)} max={max} />}>
+      <Tile label="Envoi" icon={ArrowUp} wide chart={<Sparkline values={history.map((n) => n.txRate)} max={max} />}>
         {rate(net.txRate)}
       </Tile>
-      <Tile label="Latence" detail="vers Internet">
+      <Tile label="Latence" icon={Timer} detail="vers Internet">
         {net.latencyMs == null ? '—' : `${net.latencyMs} ms`}
       </Tile>
-      <Tile label="Connexion" detail={net.interface || undefined}>
+      <Tile label="Connexion" icon={net.kind === 'wifi' ? Wifi : EthernetPort} detail={net.interface || undefined}>
         {net.kind === 'wifi' ? 'Wi-Fi' : net.kind === 'ethernet' ? 'Câble' : '—'}
       </Tile>
-      <Tile label="IP locale">{net.localIP || '—'}</Tile>
-      <Tile label="IP publique">{publicIP ?? '…'}</Tile>
+      <Tile label="IP locale" icon={House}>{net.localIP || '—'}</Tile>
+      <Tile label="IP publique" icon={Globe}>{publicIP ?? '…'}</Tile>
     </div>
   )
 }

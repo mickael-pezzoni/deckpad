@@ -1,3 +1,4 @@
+import { Cpu, Gauge, Gpu, MemoryStick } from 'lucide-react'
 import { Tile } from '../components/Tile'
 import { Sparkline } from '../components/Sparkline'
 import { useStatsStream, type Stats } from '../hooks/useStatsStream'
@@ -14,12 +15,14 @@ export function StatsPage() {
     <div className="grid grid-large">
       <Tile
         label="CPU"
+        icon={Cpu}
         chart={<Sparkline values={history.map((s) => s.cpu)} />}
       >
         {Math.round(latest.cpu)} %
       </Tile>
       <Tile
         label="RAM"
+        icon={MemoryStick}
         detail={`${gb(latest.ramUsed)} / ${gb(latest.ramTotal)} Go`}
         chart={<Sparkline values={history.map(ramPct)} />}
       >
@@ -27,12 +30,13 @@ export function StatsPage() {
       </Tile>
       <Tile
         label="GPU"
+        icon={Gpu}
         detail={gpu ? gpuDetail(gpu) : 'Non détecté'}
         chart={gpu && <Sparkline values={history.map((s) => s.gpu?.usage ?? 0)} />}
       >
         {gpu ? `${Math.round(gpu.usage)} %` : '—'}
       </Tile>
-      <Tile label="FPS" detail={latest.fps == null ? 'Bientôt disponible' : undefined}>
+      <Tile label="FPS" icon={Gauge} detail={latest.fps == null ? 'Bientôt disponible' : undefined}>
         {latest.fps ?? '—'}
       </Tile>
       {!connected && <p className="coming-soon">Connexion perdue, reconnexion…</p>}

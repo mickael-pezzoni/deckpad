@@ -133,15 +133,42 @@ body,
 
 .tile-head {
   display: flex;
-  min-height: 28px; /* même hauteur avec ou sans badge */
+  min-height: 36px; /* même hauteur avec ou sans badge ou icône */
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
 .tile-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--muted);
   font-size: 16px;
+}
+
+/* Pastille d'icône : couleur d'accent sur fond légèrement teinté. */
+.tile-icon-image {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--muted);
+}
+
+.tile-icon-image img {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.tile-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
 }
 
 /* Niveau de consommation : fond légèrement teinté + badge texte (jamais la couleur seule). */
