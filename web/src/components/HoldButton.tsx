@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { playClick } from '../feedback/clickSound'
 
 type Props = {
   children: ReactNode
@@ -30,6 +31,7 @@ export function HoldButton({ children, className = '', holdMs = 0, onConfirm, on
     timer.current = window.setTimeout(() => {
       timer.current = undefined
       setHolding(false)
+      playClick()
       onConfirm()
     }, holdMs)
   }
@@ -45,6 +47,7 @@ export function HoldButton({ children, className = '', holdMs = 0, onConfirm, on
       className={`action ${holding ? 'holding' : ''} ${className}`}
       style={{ '--hold-ms': `${holdMs}ms` } as React.CSSProperties}
       onClick={holdMs ? undefined : onConfirm}
+      data-silent={holdMs ? '' : undefined}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={() => cancel(true)}
