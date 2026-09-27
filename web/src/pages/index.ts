@@ -6,6 +6,7 @@ import { StatsPage } from './StatsPage'
 import { ProcessPage } from './ProcessPage'
 import { NetworkPage } from './NetworkPage'
 import { SystemPage } from './SystemPage'
+import { FilesPage } from './FilesPage'
 
 export type Page = { id: string; title: string; icon: LucideIcon; Component: ComponentType }
 
@@ -14,7 +15,7 @@ export const pages: Page[] = [
   { id: 'info', title: 'Infos PC', icon: Monitor, Component: InfoPage },
   { id: 'stats', title: 'Stats', icon: Activity, Component: StatsPage },
   { id: 'process', title: 'Processus', icon: ListTree, Component: ProcessPage },
-  { id: 'files', title: 'Fichiers', icon: Folder, Component: ComingSoon },
+  { id: 'files', title: 'Fichiers', icon: Folder, Component: FilesPage },
   { id: 'network', title: 'Réseau', icon: Network, Component: NetworkPage },
   { id: 'system', title: 'Système', icon: Power, Component: SystemPage },
   { id: 'settings', title: 'Paramètres', icon: Settings, Component: ComingSoon },
