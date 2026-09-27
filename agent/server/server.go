@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/live"
 	"github.com/mickael-pezzoni/deckpad/agent/network"
 	"github.com/mickael-pezzoni/deckpad/agent/process"
@@ -39,6 +40,8 @@ func New(store *auth.Store) http.Handler {
 	mux.Handle("GET /api/network/stream", stream(live.NewHub(time.Second, network.NewMonitor().Collect)))
 	mux.HandleFunc("GET /api/network/public-ip", handlePublicIP)
 	mux.HandleFunc("POST /api/system/{action}", handleSystem)
+	mux.HandleFunc("GET /api/files/drives", handleDrives)
+	mux.HandleFunc("GET /api/files/list", handleList)
 	mux.Handle("/", appHandler())
 	return requireToken(store, mux)
 }
@@ -71,6 +74,29 @@ func handleIcon(procs *process.Lister) http.HandlerFunc {
 		w.Header().Set("Content-Type", icon.ContentType)
 		w.Header().Set("Cache-Control", "max-age=86400")
 		w.Write(icon.Data)
+	}
+}
+
+func handleDrives(w http.ResponseWriter, r *http.Request) {
+	drives, err := files.Drives(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, drives)
+}
+
+func handleList(w http.ResponseWriter, r *http.Request) {
+	l, err := files.List(r.Context(), r.URL.Query().Get("path"))
+	switch {
+	case errors.Is(err, files.ErrOutside), errors.Is(err, files.ErrForbidden):
+		http.Error(w, err.Error(), http.StatusForbidden)
+	case errors.Is(err, files.ErrNotFound):
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case err != nil:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	default:
+		writeJSON(w, l)
 	}
 }
 
