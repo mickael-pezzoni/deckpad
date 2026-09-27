@@ -523,6 +523,236 @@ body,
   text-align: center;
 }
 
+/* Page Audio : sorties et micro en haut, table de mixage en dessous. */
+.audio-bar {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap);
+  margin-bottom: 24px;
+}
+
+.audio-outputs {
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.audio-outputs button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 280px;
+  min-height: 64px;
+  padding: 0 22px;
+}
+
+.audio-outputs button span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.audio-outputs button.active svg {
+  color: var(--accent);
+}
+
+.audio-mic {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 0 28px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--tile);
+  color: var(--text);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.audio-mic svg {
+  color: var(--accent);
+}
+
+.audio-mic:active:not(:disabled) {
+  background: var(--tile-active);
+}
+
+.audio-mic.is-muted {
+  background: color-mix(in srgb, var(--critical) 18%, var(--tile));
+  color: var(--critical-text);
+}
+
+.audio-mic.is-muted svg {
+  color: var(--critical-text);
+}
+
+.audio-mic:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.audio-mic:disabled svg {
+  color: var(--muted);
+}
+
+/* Table de mixage : une colonne par curseur, défile de côté si trop d'applis. */
+.mixer {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: var(--gap);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mixer::-webkit-scrollbar {
+  display: none;
+}
+
+.mixer-empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  text-align: center;
+}
+
+.fader {
+  display: flex;
+  flex: 0 1 170px;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 120px;
+  min-height: 0;
+  padding: 20px 16px 16px;
+  border-radius: var(--radius);
+  background: var(--tile);
+}
+
+.fader-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.fader-label {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fader-value {
+  font-size: 24px;
+  white-space: nowrap;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Piste large pour le doigt : on la tape ou on la fait glisser. */
+.fader-track {
+  position: relative;
+  flex: 1;
+  width: 72px;
+  min-height: 80px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--tile-active);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.fader-fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--accent);
+}
+
+.fader-fill::after {
+  /* repère du niveau : une barre claire en haut du remplissage */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.7);
+  transform: translateY(6px);
+}
+
+.fader-mute {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 100%;
+  height: 60px;
+  border: none;
+  border-radius: 14px;
+  background: var(--tile-active);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.fader.is-muted .fader-fill {
+  background: var(--muted);
+  opacity: 0.45;
+}
+
+.fader.is-muted .fader-value {
+  color: var(--muted);
+}
+
+.fader.is-muted .fader-mute {
+  background: color-mix(in srgb, var(--critical) 24%, transparent);
+  color: var(--critical-text);
+}
+
+@media (max-height: 700px) {
+  .audio-bar {
+    margin-bottom: 16px;
+  }
+  .fader {
+    gap: 10px;
+    padding: 14px 12px 12px;
+  }
+  .fader-mute {
+    height: 52px;
+  }
+}
+
+@media (max-width: 560px) {
+  .audio-bar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .fader {
+    min-width: 96px;
+  }
+  .fader-value {
+    font-size: 20px;
+  }
+  .fader-track {
+    width: 60px;
+  }
+}
+
 .usage-bar {
   flex: none;
   height: 12px;
@@ -568,12 +798,15 @@ body,
   .page {
     padding: 24px 16px 16px;
   }
+  .nav-menu {
+    gap: 2px;
+  }
   .nav-item {
-    min-width: 44px;
-    padding: 0 10px;
+    min-width: 40px;
+    padding: 0 8px;
   }
   .nav-item.active {
-    padding: 0 12px;
+    padding: 0 10px;
   }
   .nav-label {
     display: none; /* téléphone : icônes seules pour tenir sur une ligne */

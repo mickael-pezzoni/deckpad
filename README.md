@@ -51,5 +51,6 @@ Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recha
 | Processus | ✅ applications de l'utilisateur, tri CPU/RAM, fermeture avec confirmation |
 | Fichiers | à venir |
 | Réseau | ✅ débit en direct, latence, IP locale et publique, type de connexion |
+| Audio | ✅ volume général et par appli, micro, choix de la sortie (casque, enceintes…). Sous Linux : `pactl` requis (fourni avec PulseAudio / PipeWire) |
 | Système | ✅ verrouiller, veille, redémarrer, éteindre (appui long) |
 | Paramètres | à venir |

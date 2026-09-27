@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { Activity, Folder, ListTree, Monitor, Network, Power, Settings, type LucideIcon } from 'lucide-react'
+import { Activity, Folder, ListTree, Monitor, Network, Power, Settings, Volume2, type LucideIcon } from 'lucide-react'
 import { InfoPage } from './InfoPage'
 import { ComingSoon } from './ComingSoon'
 import { StatsPage } from './StatsPage'
@@ -7,6 +7,7 @@ import { ProcessPage } from './ProcessPage'
 import { NetworkPage } from './NetworkPage'
 import { SystemPage } from './SystemPage'
 import { FilesPage } from './FilesPage'
+import { AudioPage } from './AudioPage'
 
 export type Page = { id: string; title: string; icon: LucideIcon; Component: ComponentType }
 
@@ -17,6 +18,7 @@ export const pages: Page[] = [
   { id: 'process', title: 'Processus', icon: ListTree, Component: ProcessPage },
   { id: 'files', title: 'Fichiers', icon: Folder, Component: FilesPage },
   { id: 'network', title: 'Réseau', icon: Network, Component: NetworkPage },
+  { id: 'audio', title: 'Audio', icon: Volume2, Component: AudioPage },
   { id: 'system', title: 'Système', icon: Power, Component: SystemPage },
   { id: 'settings', title: 'Paramètres', icon: Settings, Component: ComingSoon },
 ]

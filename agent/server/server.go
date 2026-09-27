@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/mickael-pezzoni/deckpad/agent/audio"
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
 	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/live"
@@ -42,6 +43,11 @@ func New(store *auth.Store) http.Handler {
 	mux.HandleFunc("POST /api/system/{action}", handleSystem)
 	mux.HandleFunc("GET /api/files/drives", handleDrives)
 	mux.HandleFunc("GET /api/files/list", handleList)
+	mux.Handle("GET /api/audio/stream", stream(live.NewHub(time.Second, audio.Collect)))
+	mux.HandleFunc("POST /api/audio/volume", handleAudioVolume)
+	mux.HandleFunc("POST /api/audio/mute", handleAudioMute)
+	mux.HandleFunc("POST /api/audio/output", handleAudioOutput)
+	mux.HandleFunc("GET /api/audio/icon", handleAudioIcon)
 	mux.Handle("/", appHandler())
 	return requireToken(store, mux)
 }
@@ -98,6 +104,75 @@ func handleList(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeJSON(w, l)
 	}
+}
+
+func handleAudioVolume(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Target string `json:"target"`
+		Volume int    `json:"volume"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "requête invalide", http.StatusBadRequest)
+		return
+	}
+	audioResult(w, audio.SetVolume(r.Context(), req.Target, req.Volume))
+}
+
+func handleAudioMute(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Target string `json:"target"`
+		Muted  bool   `json:"muted"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "requête invalide", http.StatusBadRequest)
+		return
+	}
+	audioResult(w, audio.SetMute(r.Context(), req.Target, req.Muted))
+}
+
+func handleAudioOutput(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "requête invalide", http.StatusBadRequest)
+		return
+	}
+	err := audio.SetOutput(r.Context(), req.ID)
+	if err == nil {
+		log.Printf("sortie audio : %s", req.ID)
+	}
+	audioResult(w, err)
+}
+
+func audioResult(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, audio.ErrBadTarget):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, audio.ErrNotFound):
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case err != nil:
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleAudioIcon(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("app")
+	exe, ok := audio.AppExe(id)
+	if !ok {
+		http.Error(w, audio.ErrNotFound.Error(), http.StatusNotFound)
+		return
+	}
+	icon, err := process.IconOf(exe, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", icon.ContentType)
+	w.Header().Set("Cache-Control", "max-age=86400")
+	w.Write(icon.Data)
 }
 
 func handleSystem(w http.ResponseWriter, r *http.Request) {
