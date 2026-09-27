@@ -34,9 +34,61 @@ body,
 
 .deck {
   height: 100%;
-  --swiper-pagination-color: var(--accent);
-  --swiper-pagination-bullet-size: 12px;
-  --swiper-pagination-bullet-inactive-color: var(--muted);
+}
+
+/* Cadre de l'app : pages au-dessus, menu fixe en bas. */
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.shell-content {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Menu d'icônes : petite barre centrée, la page active montre aussi son nom. */
+.nav-menu {
+  display: flex;
+  flex: none;
+  align-self: center;
+  gap: 4px;
+  max-width: calc(100% - 32px);
+  margin: 0 0 20px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--tile);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 56px;
+  height: 56px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:active {
+  background: var(--tile-active);
+}
+
+.nav-item.active {
+  padding: 0 20px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
 }
 
 .page {
@@ -44,17 +96,10 @@ body,
   flex-direction: column;
   height: 100%;
   overflow: hidden; /* une page tient dans l'écran : pas de défilement */
-  padding: 32px 40px 56px;
+  padding: 32px 40px 24px;
 }
 
-.page-title {
-  flex: none;
-  margin: 0 0 24px;
-  font-size: 32px;
-  font-weight: 600;
-}
-
-/* Contenu sous le titre : prend toute la hauteur restante. */
+/* Contenu de la page : prend toute la hauteur disponible. */
 .page-body {
   display: flex;
   flex: 1;
@@ -106,7 +151,6 @@ body,
 .tile {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 12px;
   min-height: 0;
   overflow: hidden;
@@ -206,6 +250,16 @@ body,
   color: var(--critical-text);
 }
 
+/* Valeur + détail : toujours centrés verticalement entre l'en-tête et le bas (ou la courbe). */
+.tile-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+}
+
 .tile-value {
   flex: none; /* le nom ne doit jamais être écrasé par le reste de la tuile */
   display: -webkit-box;
@@ -223,10 +277,9 @@ body,
 }
 
 .sparkline {
-  flex: 1 1 0;
+  flex: 0 1 96px; /* hauteur fixe en bas de la carte, rétrécit si l'écran est bas */
   width: 100%;
-  min-height: 0;
-  max-height: 96px;
+  min-height: 32px;
 }
 
 .sparkline-line {
@@ -320,7 +373,7 @@ body,
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 56px;
+  bottom: 100px; /* au-dessus du menu */
   z-index: 5;
   transform: translateX(-50%);
   max-width: calc(100% - 32px);
@@ -407,8 +460,11 @@ body,
   .page {
     padding-top: 24px;
   }
-  .page-title {
-    margin-bottom: 16px;
+  .nav-menu {
+    margin-bottom: 12px;
+  }
+  .nav-item {
+    height: 52px;
   }
   .tile {
     gap: 8px;
@@ -418,7 +474,17 @@ body,
 
 @media (max-width: 560px) {
   .page {
-    padding: 24px 16px 56px;
+    padding: 24px 16px 16px;
+  }
+  .nav-item {
+    min-width: 44px;
+    padding: 0 10px;
+  }
+  .nav-item.active {
+    padding: 0 12px;
+  }
+  .nav-label {
+    display: none; /* téléphone : icônes seules pour tenir sur une ligne */
   }
   .tile-wide {
     grid-column: span 1;
@@ -538,5 +604,53 @@ body,
   }
   .keypad {
     --key: clamp(64px, min(11vh, 22vw), 112px);
+  }
+}
+
+/* Chargement : grille 3×3 de mini tuiles, vague diagonale. */
+.loader {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  gap: 8px;
+}
+
+.loader-grid span {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--tile-active);
+  animation: loader-wave 1.4s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 0.12s);
+}
+
+@keyframes loader-wave {
+  0%, 60%, 100% {
+    background: var(--tile-active);
+    transform: scale(0.8);
+  }
+  25% {
+    background: var(--accent);
+    transform: scale(1);
+  }
+}
+
+.loader-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-grid span {
+    animation-duration: 3s;
   }
 }

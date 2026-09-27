@@ -36,8 +36,10 @@ export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wi
         </span>
         {badge && <span className={`badge badge-${badge.tone}`}>{badge.text}</span>}
       </span>
-      <span className="tile-value">{children}</span>
-      {detail && <span className="tile-detail">{detail}</span>}
+      <span className="tile-content">
+        <span className="tile-value">{children}</span>
+        {detail && <span className="tile-detail">{detail}</span>}
+      </span>
       {chart}
     </>
   )

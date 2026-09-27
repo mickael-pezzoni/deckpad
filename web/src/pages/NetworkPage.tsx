@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, EthernetPort, Globe, House, Timer, Wifi } from 'luc
 import { Tile } from '../components/Tile'
 import { Sparkline } from '../components/Sparkline'
 import { useEventStream } from '../hooks/useEventStream'
+import { Loader } from '../components/Loader'
 
 type Net = {
   interface: string
@@ -20,6 +21,7 @@ export function NetworkPage() {
   const [publicIP, setPublicIP] = useState<string | null>(null)
   const connected = useEventStream<Net>('/api/network/stream', (n) =>
     setHistory((h) => [...h.slice(-(HISTORY - 1)), n]),
+    { keepAlive: true }, // garde les courbes complètes
   )
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function NetworkPage() {
   }, [])
 
   const net = history.at(-1)
-  if (!net) return <p className="coming-soon">{connected ? 'Chargement…' : 'Connexion au PC…'}</p>
+  if (!net) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
 
   // Même échelle pour les deux courbes, avec un plancher pour ne pas amplifier le bruit.
   const max = Math.max(128 * 1024, ...history.flatMap((n) => [n.rxRate, n.txRate]))

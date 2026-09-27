@@ -16,6 +16,7 @@ export function useStatsStream() {
   const [history, setHistory] = useState<Stats[]>([])
   const connected = useEventStream<Stats>('/api/stats/stream', (s) =>
     setHistory((h) => [...h.slice(-(HISTORY - 1)), s]),
+    { keepAlive: true }, // garde les courbes complètes
   )
   return { latest: history.at(-1), history, connected }
 }

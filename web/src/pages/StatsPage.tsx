@@ -2,11 +2,12 @@ import { Cpu, Gauge, Gpu, MemoryStick } from 'lucide-react'
 import { Tile } from '../components/Tile'
 import { Sparkline } from '../components/Sparkline'
 import { useStatsStream, type Stats } from '../hooks/useStatsStream'
+import { Loader } from '../components/Loader'
 
 export function StatsPage() {
   const { latest, history, connected } = useStatsStream()
 
-  if (!latest) return <p className="coming-soon">{connected ? 'Chargement…' : 'Connexion au PC…'}</p>
+  if (!latest) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
 
   const ramPct = (s: typeof latest) => (s.ramUsed / s.ramTotal) * 100
   const gpu = latest.gpu
