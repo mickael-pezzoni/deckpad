@@ -8,6 +8,7 @@ import (
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
 	"github.com/mickael-pezzoni/deckpad/agent/server"
+	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/window"
 )
 
@@ -34,8 +35,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	keysPath, err := shortcuts.DefaultPath()
+	if err != nil {
+		log.Fatal(err)
+	}
+	keys, err := shortcuts.Open(keysPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	logLocalURLs(port)
-	log.Fatal(http.ListenAndServe(*addr, server.New(store)))
+	log.Fatal(http.ListenAndServe(*addr, server.New(store, keys)))
 }
 
 // logLocalURLs affiche les adresses à ouvrir depuis la tablette.

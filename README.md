@@ -53,5 +53,6 @@ Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recha
 | Réseau | ✅ débit en direct, latence, IP locale et publique, type de connexion |
 | Audio | ✅ volume général et par appli, micro, choix de la sortie (casque, enceintes…). Sous Linux : `pactl` requis (fourni avec PulseAudio / PipeWire) |
 | Médias | ✅ titre, artiste, pochette, lecture/pause, suivant/précédent (Spotify, YouTube dans le navigateur, VLC…). Windows 10 1809+ ; sous Linux, tout lecteur compatible MPRIS |
+| Raccourcis | ✅ tuiles configurables depuis la tablette (appui long pour modifier) : combinaison de touches, programme, dossier ou adresse web. Enregistrés dans `%APPDATA%\deckpad\shortcuts.json` (Windows) ou `~/.config/deckpad/shortcuts.json` (Linux). Sous Linux, les touches demandent `xdotool` (X11) ou `ydotool` (Wayland) |
 | Système | ✅ verrouiller, veille, redémarrer, éteindre (appui long) |
 | Paramètres | à venir |

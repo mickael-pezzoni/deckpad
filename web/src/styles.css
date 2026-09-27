@@ -963,6 +963,291 @@ body,
   font-size: 20px;
 }
 
+/* Page Raccourcis : grille calculée pour tenir sur l'écran, tuiles teintées de leur couleur. */
+.shortcuts-grid {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  gap: var(--gap);
+  overflow: hidden;
+}
+
+.shortcut {
+  --c: var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--c) 14%, var(--tile));
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.shortcut:active,
+.shortcut.is-flash {
+  background: color-mix(in srgb, var(--c) 28%, var(--tile));
+  transform: scale(0.97);
+}
+
+.shortcut-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--c) 22%, transparent);
+  color: var(--c);
+}
+
+.shortcut-label {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(18px, 2.6vh, 22px);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* un nom long passe sur deux lignes plutôt que d'être coupé */
+}
+
+.shortcut-detail {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shortcut.is-disabled {
+  background: var(--tile);
+}
+
+.shortcut.is-disabled .shortcut-icon {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--muted);
+}
+
+.shortcut.is-disabled .shortcut-label {
+  color: var(--muted);
+}
+
+.shortcut-add {
+  background: transparent;
+  outline: 2px dashed var(--tile-active);
+  outline-offset: -2px;
+}
+
+.shortcut-add .shortcut-icon {
+  background: var(--tile);
+  color: var(--muted);
+}
+
+.shortcut-add .shortcut-detail {
+  white-space: normal;
+}
+
+/* Points de pagination : grosses zones de clic, petits points. */
+.pager {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.pager button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 36px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.pager span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tile-active);
+}
+
+.pager .active span {
+  width: 24px;
+  border-radius: 5px;
+  background: var(--accent);
+}
+
+/* Fenêtre de modification d'un raccourci : défile à l'intérieur si l'écran est trop petit. */
+.editor {
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: 100%;
+}
+
+.editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  margin-bottom: 20px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.editor-body::-webkit-scrollbar {
+  display: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field > span {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.field input,
+.field select {
+  min-height: 56px;
+  padding: 0 16px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 18px;
+  user-select: text;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.picker button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.picker button.active {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.picker .swatch {
+  background: var(--c);
+}
+
+.picker .swatch.active {
+  border-color: var(--text);
+}
+
+.editor-kinds {
+  align-self: stretch;
+  margin: 0;
+  background: var(--bg);
+}
+
+.editor-kinds button {
+  flex: 1;
+  padding: 0 12px;
+}
+
+.editor-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editor-keys select {
+  flex: 1;
+  min-width: 140px;
+}
+
+.chip {
+  min-width: 72px;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  color: var(--text);
+}
+
+.editor-warning,
+.editor-error {
+  margin: 0;
+  font-size: 15px;
+}
+
+.dialog .editor-warning {
+  margin: 0;
+  color: var(--warning-text);
+  font-size: 15px;
+}
+
+.dialog .editor-error {
+  margin: 0 0 16px;
+  color: var(--critical-text);
+  font-size: 16px;
+}
+
+.dialog-actions-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.btn-primary {
+  background: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+}
+
 /* Écrans bas (tablette en paysage) : tuiles un peu plus compactes pour tout faire tenir. */
 @media (max-height: 700px) {
   .page {
@@ -985,20 +1270,41 @@ body,
     padding: 24px 16px 16px;
   }
   .nav-menu {
+    align-self: stretch;
     gap: 2px;
+    max-width: none;
+    margin: 0 16px 16px;
   }
   .nav-item {
-    min-width: 34px;
-    padding: 0 5px;
+    flex: 1 1 0; /* les icônes se partagent la largeur, quel que soit le nombre de pages */
+    min-width: 0;
+    padding: 0;
   }
   .nav-item.active {
-    padding: 0 5px;
+    padding: 0;
   }
   .nav-label {
     display: none; /* téléphone : icônes seules pour tenir sur une ligne */
   }
   .tile-wide {
     grid-column: span 1;
+  }
+  .shortcut {
+    gap: 8px;
+    padding: 12px;
+  }
+  .shortcut-icon {
+    width: 52px;
+    height: 52px;
+  }
+  .shortcut-label {
+    font-size: 17px;
+  }
+  .dialog-actions-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dialog-actions-3 .btn-danger {
+    grid-column: span 2;
   }
 }
 

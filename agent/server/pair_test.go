@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 )
 
 func TestPairingProtectsAPI(t *testing.T) {
@@ -16,7 +17,11 @@ func TestPairingProtectsAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := New(store)
+	keys, err := shortcuts.Open(filepath.Join(t.TempDir(), "shortcuts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := New(store, keys)
 	do := func(method, target, body string, setup func(*http.Request)) *httptest.ResponseRecorder {
 		r := httptest.NewRequest(method, target, strings.NewReader(body)) // vient de 192.0.2.1 : la tablette
 		if setup != nil {
@@ -30,6 +35,9 @@ func TestPairingProtectsAPI(t *testing.T) {
 
 	if w := do("GET", "/api/info", "", nil); w.Code != http.StatusUnauthorized {
 		t.Fatalf("API ouverte sans appairage : %d", w.Code)
+	}
+	if w := do("POST", "/api/shortcuts/calc/run", "", nil); w.Code != http.StatusUnauthorized {
+		t.Fatalf("raccourcis ouverts sans appairage : %d", w.Code)
 	}
 	if w := do("POST", "/api/pair/start", "", nil); w.Code != http.StatusOK {
 		t.Fatalf("start : %d", w.Code)
