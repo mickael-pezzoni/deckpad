@@ -24,11 +24,14 @@ var KeyNames = func() []string {
 	)
 }()
 
-// KeysSupport indique si le PC peut recevoir des touches, et sinon pourquoi.
-type KeysSupport struct {
+// Availability indique si le PC sait faire une action, et sinon pourquoi.
+type Availability struct {
 	OK     bool   `json:"ok"`
 	Reason string `json:"reason,omitempty"`
 }
 
-// Support indique si ce PC peut recevoir des combinaisons de touches.
-func Support() KeysSupport { return keysSupport() }
+// KeysAvailable indique si ce PC peut recevoir des combinaisons de touches.
+func KeysAvailable() Availability { return keysAvailable() }
+
+// CaptureAvailable indique si ce PC sait copier une capture d'écran.
+func CaptureAvailable() Availability { return captureAvailable() }

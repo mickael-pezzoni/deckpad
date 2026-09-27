@@ -211,13 +211,18 @@ func handleMediaCover(w http.ResponseWriter, r *http.Request) {
 }
 
 type shortcutsReply struct {
-	Shortcuts []shortcuts.Shortcut  `json:"shortcuts"`
-	Keys      shortcuts.KeysSupport `json:"keys"`
+	Shortcuts []shortcuts.Shortcut   `json:"shortcuts"`
+	Keys      shortcuts.Availability `json:"keys"`
+	Capture   shortcuts.Availability `json:"capture"`
+}
+
+func newShortcutsReply(list []shortcuts.Shortcut) shortcutsReply {
+	return shortcutsReply{list, shortcuts.KeysAvailable(), shortcuts.CaptureAvailable()}
 }
 
 func handleShortcuts(keys *shortcuts.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, shortcutsReply{keys.List(), shortcuts.Support()})
+		writeJSON(w, newShortcutsReply(keys.List()))
 	}
 }
 
@@ -236,7 +241,7 @@ func handleShortcutsSave(keys *shortcuts.Store) http.HandlerFunc {
 		case err != nil:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		default:
-			writeJSON(w, shortcutsReply{saved, shortcuts.Support()})
+			writeJSON(w, newShortcutsReply(saved))
 		}
 	}
 }

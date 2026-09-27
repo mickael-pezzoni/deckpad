@@ -1098,7 +1098,27 @@ body,
   display: flex;
   flex-direction: column;
   width: min(640px, 100%);
-  max-height: 100%;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px); /* suit le clavier virtuel et les barres du navigateur */
+}
+
+.editor h2,
+.editor .dialog-actions,
+.editor .editor-error {
+  flex: none;
+}
+
+@media (max-height: 700px) {
+  .editor {
+    padding: 20px 24px;
+  }
+  .editor .editor-body {
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .editor .btn {
+    min-height: 56px;
+  }
 }
 
 .editor-body {
@@ -1301,6 +1321,10 @@ body,
     font-size: 17px;
   }
   .dialog-actions-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .editor-kinds {
+    display: grid;
     grid-template-columns: 1fr 1fr;
   }
   .dialog-actions-3 .btn-danger {

@@ -20,9 +20,10 @@ import (
 type Kind string
 
 const (
-	KindKeys   Kind = "keys"   // combinaison de touches, ex. ["win", "shift", "s"]
-	KindLaunch Kind = "launch" // commande ou programme
-	KindOpen   Kind = "open"   // dossier, fichier ou adresse web
+	KindKeys    Kind = "keys"    // combinaison de touches, ex. ["win", "shift", "s"]
+	KindLaunch  Kind = "launch"  // commande ou programme
+	KindOpen    Kind = "open"    // dossier, fichier ou adresse web
+	KindCapture Kind = "capture" // capture de tout l'écran, copiée dans le presse-papiers
 )
 
 type Shortcut struct {
@@ -135,6 +136,8 @@ func (s *Store) Run(id string) error {
 		return launch(sc.Command)
 	case KindOpen:
 		return open(expandHome(sc.Target))
+	case KindCapture:
+		return capture()
 	}
 	return ErrInvalid
 }
@@ -168,6 +171,8 @@ func clean(sc Shortcut) (Shortcut, error) {
 			return sc, fmt.Errorf("%w : dossier ou adresse manquant", ErrInvalid)
 		}
 		sc.Keys, sc.Command = nil, ""
+	case KindCapture:
+		sc.Keys, sc.Command, sc.Target = nil, "", ""
 	default:
 		return sc, fmt.Errorf("%w : type inconnu", ErrInvalid)
 	}

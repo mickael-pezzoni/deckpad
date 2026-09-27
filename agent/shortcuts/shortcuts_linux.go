@@ -51,24 +51,24 @@ func wayland() bool {
 	return os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("XDG_SESSION_TYPE") == "wayland"
 }
 
-func keysSupport() KeysSupport {
+func keysAvailable() Availability {
 	switch {
 	case wayland():
 		if _, err := exec.LookPath("ydotool"); err != nil {
-			return KeysSupport{Reason: "Sous Wayland, installe ydotool pour envoyer des touches"}
+			return Availability{Reason: "Sous Wayland, installe ydotool pour envoyer des touches"}
 		}
 	case os.Getenv("DISPLAY") != "":
 		if _, err := exec.LookPath("xdotool"); err != nil {
-			return KeysSupport{Reason: "Installe xdotool pour envoyer des touches"}
+			return Availability{Reason: "Installe xdotool pour envoyer des touches"}
 		}
 	default:
-		return KeysSupport{Reason: "Aucune session graphique"}
+		return Availability{Reason: "Aucune session graphique"}
 	}
-	return KeysSupport{OK: true}
+	return Availability{OK: true}
 }
 
 func sendKeys(keys []string) error {
-	if s := keysSupport(); !s.OK {
+	if s := keysAvailable(); !s.OK {
 		return fmt.Errorf("%s", s.Reason)
 	}
 	var cmd *exec.Cmd
@@ -118,7 +118,7 @@ func open(target string) error { return startDetached("xdg-open", target) }
 
 func defaults() []Shortcut {
 	return []Shortcut{
-		{ID: "capture", Label: "Capture d'écran", Icon: "camera", Color: "blue", Kind: KindKeys, Keys: []string{"printscreen"}},
+		{ID: "capture", Label: "Capture d'écran", Icon: "camera", Color: "blue", Kind: KindCapture},
 		{ID: "record", Label: "Enregistrer l'écran", Icon: "video", Color: "red", Kind: KindKeys, Keys: []string{"ctrl", "alt", "shift", "r"}},
 		{ID: "taskmgr", Label: "Moniteur système", Icon: "gauge", Color: "green", Kind: KindLaunch,
 			Command: "gnome-system-monitor || plasma-systemmonitor || ksysguard || xfce4-taskmanager"},

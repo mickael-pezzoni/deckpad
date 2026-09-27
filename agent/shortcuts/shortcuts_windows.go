@@ -65,7 +65,7 @@ var vkeys = func() map[string]vkey {
 	return m
 }()
 
-func keysSupport() KeysSupport { return KeysSupport{OK: true} }
+func keysAvailable() Availability { return Availability{OK: true} }
 
 // sendKeys appuie sur les touches dans l'ordre puis les relâche dans l'ordre inverse,
 // comme si l'utilisateur les tapait (SendInput).
@@ -125,7 +125,7 @@ func open(target string) error {
 
 func defaults() []Shortcut {
 	return []Shortcut{
-		{ID: "capture", Label: "Capture d'écran", Icon: "camera", Color: "blue", Kind: KindKeys, Keys: []string{"shift", "win", "s"}},
+		{ID: "capture", Label: "Capture d'écran", Icon: "camera", Color: "blue", Kind: KindCapture},
 		{ID: "record", Label: "Enregistrer l'écran", Icon: "video", Color: "red", Kind: KindKeys, Keys: []string{"alt", "win", "r"}},
 		{ID: "taskmgr", Label: "Gestionnaire des tâches", Icon: "gauge", Color: "green", Kind: KindKeys, Keys: []string{"ctrl", "shift", "esc"}},
 		{ID: "home", Label: "Dossier personnel", Icon: "folder", Color: "orange", Kind: KindOpen, Target: "~"},

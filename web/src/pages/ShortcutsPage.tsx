@@ -5,7 +5,7 @@ import { Loader } from '../components/Loader'
 import { ShortcutTile } from '../components/ShortcutTile'
 import { ShortcutEditor } from '../components/ShortcutEditor'
 import { usePageActive } from '../layout/pageActive'
-import type { Shortcut, ShortcutsState } from '../shortcuts/types'
+import { unavailable, type Shortcut, type ShortcutsState } from '../shortcuts/types'
 
 // Taille minimale d'une tuile (plus petite sur téléphone) : sert à calculer
 // combien en tiennent sur l'écran.
@@ -43,9 +43,11 @@ export function ShortcutsPage() {
   }, [active])
 
   async function run(s: Shortcut) {
-    if (s.kind === 'keys' && !state?.keys.ok) return setNotice(state?.keys.reason ?? 'Touches indisponibles')
+    const reason = state && unavailable(s, state)
+    if (reason) return setNotice(reason)
     const r = await fetch(`/api/shortcuts/${encodeURIComponent(s.id)}/run`, { method: 'POST' }).catch(() => null)
     if (!r?.ok) setNotice(r ? `${s.label} : ${(await r.text()).trim()}` : 'PC injoignable')
+    else if (s.kind === 'capture') setNotice('Capture copiée dans le presse-papiers')
   }
 
   // Enregistre toute la liste sur le PC ; renvoie un message d'erreur.
@@ -92,7 +94,7 @@ export function ShortcutsPage() {
           <ShortcutTile
             key={s.id}
             shortcut={s}
-            disabled={s.kind === 'keys' && !state.keys.ok}
+            disabled={unavailable(s, state) !== null}
             onRun={() => run(s)}
             onEdit={() => setEditing(s)}
           />
@@ -127,6 +129,7 @@ export function ShortcutsPage() {
         <ShortcutEditor
           shortcut={editing === 'new' ? null : editing}
           keysReason={state.keys.ok ? undefined : state.keys.reason}
+          captureReason={state.capture.ok ? undefined : state.capture.reason}
           onSave={saveOne}
           onDelete={() => editing !== 'new' && remove(editing.id)}
           onCancel={() => setEditing(null)}

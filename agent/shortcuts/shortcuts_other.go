@@ -4,7 +4,11 @@ package shortcuts
 
 import "errors"
 
-func keysSupport() KeysSupport { return KeysSupport{Reason: "Non pris en charge sur ce système"} }
+func keysAvailable() Availability { return Availability{Reason: "Non pris en charge sur ce système"} }
+
+func captureAvailable() Availability { return keysAvailable() }
+
+func capture() error { return errors.New("non pris en charge sur ce système") }
 
 func sendKeys([]string) error { return errors.New("non pris en charge sur ce système") }
 

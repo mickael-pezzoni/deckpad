@@ -6,6 +6,7 @@ import { COLORS, ICONS, KEYS, MODIFIERS, comboLabel, type Kind, type Shortcut } 
 type Props = {
   shortcut: Shortcut | null // null : nouveau raccourci
   keysReason?: string // renseigné si le PC ne peut pas recevoir de touches
+  captureReason?: string // renseigné si le PC ne sait pas faire de capture
   onSave: (s: Shortcut) => Promise<string | null> // renvoie un message d'erreur
   onDelete: () => void
   onCancel: () => void
@@ -15,12 +16,13 @@ const KINDS: { id: Kind; label: string }[] = [
   { id: 'keys', label: 'Touches' },
   { id: 'launch', label: 'Programme' },
   { id: 'open', label: 'Ouvrir' },
+  { id: 'capture', label: 'Capture' },
 ]
 
 const EMPTY: Shortcut = { id: '', label: '', icon: 'zap', color: 'blue', kind: 'keys', keys: ['ctrl', 'c'] }
 
 // Fenêtre de création / modification d'un raccourci.
-export function ShortcutEditor({ shortcut, keysReason, onSave, onDelete, onCancel }: Props) {
+export function ShortcutEditor({ shortcut, keysReason, captureReason, onSave, onDelete, onCancel }: Props) {
   const [draft, setDraft] = useState<Shortcut>(shortcut ?? EMPTY)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -138,6 +140,12 @@ export function ShortcutEditor({ shortcut, keysReason, onSave, onDelete, onCance
                 </select>
               </div>
               {keysReason && <p className="editor-warning">{keysReason}</p>}
+            </div>
+          )}
+          {draft.kind === 'capture' && (
+            <div className="field">
+              <span>Capture de tout l'écran, copiée dans le presse-papiers (à coller avec Ctrl + V).</span>
+              {captureReason && <p className="editor-warning">{captureReason}</p>}
             </div>
           )}
           {draft.kind === 'launch' && (

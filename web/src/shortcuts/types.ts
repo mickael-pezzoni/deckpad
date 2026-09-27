@@ -3,7 +3,7 @@ import {
   MessageSquare, Mic, Monitor, Music, Rocket, Search, Star, Terminal, Video, Zap, type LucideIcon,
 } from 'lucide-react'
 
-export type Kind = 'keys' | 'launch' | 'open'
+export type Kind = 'keys' | 'launch' | 'open' | 'capture'
 
 export type Shortcut = {
   id: string
@@ -16,8 +16,14 @@ export type Shortcut = {
   target?: string
 }
 
-export type KeysSupport = { ok: boolean; reason?: string }
-export type ShortcutsState = { shortcuts: Shortcut[]; keys: KeysSupport }
+export type Availability = { ok: boolean; reason?: string }
+export type ShortcutsState = { shortcuts: Shortcut[]; keys: Availability; capture: Availability }
+
+// Indisponible sur ce PC : la raison, sinon null.
+export function unavailable(s: Shortcut, state: ShortcutsState) {
+  const a = s.kind === 'keys' ? state.keys : s.kind === 'capture' ? state.capture : null
+  return a && !a.ok ? (a.reason ?? 'Indisponible sur ce PC') : null
+}
 
 export const ICONS: Record<string, LucideIcon> = {
   camera: Camera,
@@ -100,6 +106,7 @@ export function comboLabel(keys: string[] = []) {
 // Ce que fait le raccourci, en une ligne.
 export function describe(s: Shortcut) {
   if (s.kind === 'keys') return comboLabel(s.keys)
+  if (s.kind === 'capture') return 'Copiée dans le presse-papiers'
   if (s.kind === 'launch') return s.command ?? ''
   return s.target ?? ''
 }
