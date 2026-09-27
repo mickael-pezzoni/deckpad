@@ -8,6 +8,7 @@ type Props = {
   appIcon?: boolean // icône de programme (pastille neutre) plutôt qu'une icône de l'app
   volume: number // 0 à 100
   muted: boolean
+  silenced?: boolean // coupé par le son général : s'affiche coupé, garde son propre réglage
   onVolume: (volume: number) => void
   onMute: (muted: boolean) => void
 }
@@ -17,7 +18,7 @@ const SEND_MS = 80
 
 // Curseur de volume vertical façon table de mixage : on glisse ou on tape sur la
 // piste. Glisser verticalement ne change pas de page (swiper-no-swiping).
-export function VolumeFader({ label, icon, appIcon, volume, muted, onVolume, onMute }: Props) {
+export function VolumeFader({ label, icon, appIcon, volume, muted, silenced, onVolume, onMute }: Props) {
   const [shownVolume, latchVolume] = useLatched(volume)
   const [shownMuted, latchMuted] = useLatched(muted)
   const [drag, setDrag] = useState<number | null>(null)
@@ -70,9 +71,10 @@ export function VolumeFader({ label, icon, appIcon, volume, muted, onVolume, onM
     onMute(!shownMuted)
   }
 
-  const MuteIcon = shownMuted ? VolumeX : Volume2
+  const quiet = shownMuted || silenced
+  const MuteIcon = quiet ? VolumeX : Volume2
   return (
-    <div className={shownMuted ? 'fader is-muted' : 'fader'}>
+    <div className={quiet ? 'fader is-muted' : 'fader'}>
       <span className="fader-head">
         <span className={appIcon ? 'tile-icon tile-icon-image' : 'tile-icon'}>{icon}</span>
         <span className="fader-label">{label}</span>

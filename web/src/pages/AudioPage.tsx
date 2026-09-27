@@ -22,6 +22,8 @@ export function AudioPage() {
   const [state, setState] = useState<AudioState | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const connected = useEventStream<AudioState>('/api/audio/stream', setState)
+  // Son général coupé : toutes les applis s'affichent coupées, tout de suite.
+  const [masterMuted, latchMasterMuted] = useLatched(state?.master?.muted ?? false)
 
   useEffect(() => {
     if (!notice) return
@@ -60,9 +62,12 @@ export function AudioPage() {
             label="Général"
             icon={<Volume2 size={20} strokeWidth={2} aria-hidden />}
             volume={state.master.volume}
-            muted={state.master.muted}
+            muted={masterMuted}
             onVolume={(v) => setVolume('master', v)}
-            onMute={(m) => setMute('master', m)}
+            onMute={(m) => {
+              latchMasterMuted(m)
+              setMute('master', m)
+            }}
           />
         ) : (
           <p className="mixer-empty">Aucune sortie audio</p>
@@ -75,6 +80,7 @@ export function AudioPage() {
             icon={<AppIcon name={a.id} src={`/api/audio/icon?app=${encodeURIComponent(a.id)}`} />}
             volume={a.volume}
             muted={a.muted}
+            silenced={masterMuted}
             onVolume={(v) => setVolume(`app:${a.id}`, v)}
             onMute={(m) => setMute(`app:${a.id}`, m)}
           />
