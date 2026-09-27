@@ -29,19 +29,23 @@ func (l *Lister) Icon(ctx context.Context, name string) (*Icon, error) {
 	if err != nil {
 		return nil, err
 	}
+	return IconOf(path, name)
+}
 
+// IconOf renvoie l'icône d'un exécutable déjà connu (ex. une appli qui joue du son).
+func IconOf(exePath, name string) (*Icon, error) {
 	iconMu.Lock()
 	defer iconMu.Unlock()
-	if ic, ok := iconCache[path]; ok {
+	if ic, ok := iconCache[exePath]; ok {
 		if ic == nil {
 			return nil, ErrNoIcon
 		}
 		return ic, nil
 	}
-	ic, err := loadIcon(path, name)
-	iconCache[path] = ic // on retient aussi les échecs pour ne pas réessayer en boucle
+	ic, err := loadIcon(exePath, name)
+	iconCache[exePath] = ic // on retient aussi les échecs pour ne pas réessayer en boucle
 	if err != nil || ic == nil {
-		iconCache[path] = nil
+		iconCache[exePath] = nil
 		return nil, ErrNoIcon
 	}
 	return ic, nil
