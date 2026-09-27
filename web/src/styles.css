@@ -606,3 +606,51 @@ body,
     --key: clamp(64px, min(11vh, 22vw), 112px);
   }
 }
+
+/* Chargement : grille 3×3 de mini tuiles, vague diagonale. */
+.loader {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  gap: 8px;
+}
+
+.loader-grid span {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--tile-active);
+  animation: loader-wave 1.4s ease-in-out infinite;
+  animation-delay: calc(var(--d) * 0.12s);
+}
+
+@keyframes loader-wave {
+  0%, 60%, 100% {
+    background: var(--tile-active);
+    transform: scale(0.8);
+  }
+  25% {
+    background: var(--accent);
+    transform: scale(1);
+  }
+}
+
+.loader-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-grid span {
+    animation-duration: 3s;
+  }
+}

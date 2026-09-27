@@ -4,6 +4,7 @@ import { Tile, type Tone } from '../components/Tile'
 import { Confirm } from '../components/Confirm'
 import { AppIcon } from '../components/AppIcon'
 import { useEventStream } from '../hooks/useEventStream'
+import { Loader } from '../components/Loader'
 
 type App = { name: string; cpu: number; ram: number; count: number }
 type SortKey = 'cpu' | 'ram'
@@ -35,7 +36,7 @@ export function ProcessPage() {
     else setNotice(`Impossible de fermer ${displayName(app.name)}`)
   }
 
-  if (!apps) return <p className="coming-soon">{connected ? 'Chargement…' : 'Connexion au PC…'}</p>
+  if (!apps) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
 
   const sorted = [...apps].sort((a, b) => b[sortBy] - a[sortBy]).slice(0, SHOWN)
 

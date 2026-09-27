@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AppWindow, CalendarDays, Clock, Cpu, Monitor, Power, User } from 'lucide-react'
 import { Tile } from '../components/Tile'
+import { Loader } from '../components/Loader'
 import { usePageActive } from '../layout/pageActive'
 
 type Info = {
@@ -36,7 +37,7 @@ export function InfoPage() {
   }, [active])
 
   if (error) return <p className="coming-soon">PC injoignable</p>
-  if (!info || !now) return <p className="coming-soon">Chargement…</p>
+  if (!info || !now) return <Loader />
 
   // La durée avance avec l'horloge, entre deux rechargements.
   const uptime = info.uptimeSec + Math.max(0, (now.getTime() - new Date(info.now).getTime()) / 1000)
