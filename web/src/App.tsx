@@ -11,7 +11,9 @@ export default function App() {
         <SwiperSlide key={id}>
           <section className="page">
             <h1 className="page-title">{title}</h1>
-            <Component />
+            <div className="page-body">
+              <Component />
+            </div>
           </section>
         </SwiperSlide>
       ))}

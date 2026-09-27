@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Tile } from '../components/Tile'
+import { Tile, type Tone } from '../components/Tile'
 import { Confirm } from '../components/Confirm'
 import { useEventStream } from '../hooks/useEventStream'
 
@@ -48,12 +48,13 @@ export function ProcessPage() {
           Tri RAM
         </button>
       </div>
-      <div className="grid">
+      <div className="grid grid-scroll">
         {sorted.map((app) => (
           <Tile
             key={app.name}
             label={app.count > 1 ? `${app.count} processus` : '1 processus'}
             detail={`CPU ${app.cpu.toFixed(1).replace('.', ',')} % · ${mb(app.ram)}`}
+            badge={usageBadge(app)}
             onClick={() => setTarget(app)}
           >
             {displayName(app.name)}
@@ -77,6 +78,15 @@ export function ProcessPage() {
       )}
     </>
   )
+}
+
+// Seuils de consommation : CPU en % de la machine, RAM en octets.
+const GB = 1024 ** 3
+
+function usageBadge(app: App): { text: string; tone: Tone } | undefined {
+  if (app.cpu >= 50 || app.ram >= 4 * GB) return { text: 'Très élevé', tone: 'critical' }
+  if (app.cpu >= 20 || app.ram >= 2 * GB) return { text: 'Élevé', tone: 'warning' }
+  return undefined
 }
 
 function displayName(name: string) {

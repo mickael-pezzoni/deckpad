@@ -37,7 +37,7 @@ export function InfoPage() {
       <Tile label="Nom du PC">{info.hostname}</Tile>
       <Tile label="Système">{info.os}</Tile>
       <Tile label="Allumé depuis">{formatUptime(info.uptimeSec)}</Tile>
-      <Tile label="Processeur" wide>{info.cpu}</Tile>
+      <Tile label="Processeur">{shortCPU(info.cpu)}</Tile>
     </div>
   )
 }
@@ -59,6 +59,15 @@ function usePcClock(info: Info | null) {
 // Windows renvoie « MACHINE\utilisateur ».
 function shortUser(username: string) {
   return username.split('\\').pop() ?? username
+}
+
+// « AMD Ryzen 7 5800X 8-Core Processor » → « AMD Ryzen 7 5800X ».
+function shortCPU(name: string) {
+  return name
+    .replace(/\((R|TM)\)/gi, '')
+    .replace(/\d+-Core|Processor|CPU|@.*$/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function formatUptime(sec: number) {
