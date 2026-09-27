@@ -37,8 +37,13 @@ body,
 
 .page {
   height: 100%;
-  overflow-y: auto;
+  overflow-y: auto; /* défilement au doigt si le contenu dépasse, sans barre visible */
+  scrollbar-width: none;
   padding: 40px 40px 72px;
+}
+
+.page::-webkit-scrollbar {
+  display: none;
 }
 
 .page-title {
