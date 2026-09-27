@@ -1,4 +1,5 @@
-package stats
+// Package live diffuse des mesures périodiques à toutes les tablettes connectées.
+package live
 
 import (
 	"context"
@@ -7,23 +8,24 @@ import (
 	"time"
 )
 
-// Hub mesure une fois par intervalle et diffuse à toutes les tablettes connectées.
+// Hub appelle collect à chaque intervalle et diffuse le résultat aux abonnés.
 // Il ne tourne que tant qu'au moins un abonné est présent.
-type Hub struct {
+type Hub[T any] struct {
 	interval time.Duration
+	collect  func(context.Context) (T, error)
 
 	mu     sync.Mutex
-	subs   map[chan Snapshot]struct{}
+	subs   map[chan T]struct{}
 	cancel context.CancelFunc
 }
 
-func NewHub(interval time.Duration) *Hub {
-	return &Hub{interval: interval, subs: map[chan Snapshot]struct{}{}}
+func NewHub[T any](interval time.Duration, collect func(context.Context) (T, error)) *Hub[T] {
+	return &Hub[T]{interval: interval, collect: collect, subs: map[chan T]struct{}{}}
 }
 
 // Subscribe renvoie un canal de mesures et la fonction pour se désabonner.
-func (h *Hub) Subscribe() (<-chan Snapshot, func()) {
-	ch := make(chan Snapshot, 1)
+func (h *Hub[T]) Subscribe() (<-chan T, func()) {
+	ch := make(chan T, 1)
 
 	h.mu.Lock()
 	h.subs[ch] = struct{}{}
@@ -45,8 +47,8 @@ func (h *Hub) Subscribe() (<-chan Snapshot, func()) {
 	}
 }
 
-func (h *Hub) run(ctx context.Context) {
-	Collect(ctx) // amorce la mesure CPU
+func (h *Hub[T]) run(ctx context.Context) {
+	h.collect(ctx) // amorce les mesures calculées par différence (CPU)
 	t := time.NewTicker(h.interval)
 	defer t.Stop()
 	for {
@@ -55,15 +57,15 @@ func (h *Hub) run(ctx context.Context) {
 			return
 		case <-t.C:
 		}
-		s, err := Collect(ctx)
+		v, err := h.collect(ctx)
 		if err != nil {
-			log.Printf("stats : %v", err)
+			log.Printf("mesure : %v", err)
 			continue
 		}
 		h.mu.Lock()
 		for ch := range h.subs {
 			select {
-			case ch <- s:
+			case ch <- v:
 			default: // client lent : il aura la suivante
 			}
 		}

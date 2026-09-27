@@ -5,6 +5,11 @@
   --text: #f2f4f8;
   --muted: #8a93a3;
   --accent: #4f8cff;
+  --danger: #d9443c;
+  --warning: #d9a441;
+  --warning-text: #f2d49b;
+  --critical: #d9605c;
+  --critical-text: #f5b8b5;
   --gap: 24px;
   --radius: 20px;
   color-scheme: dark;
@@ -35,50 +40,87 @@ body,
 }
 
 .page {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  overflow-y: auto;
-  padding: 40px 40px 72px;
+  overflow: hidden; /* une page tient dans l'écran : pas de défilement */
+  padding: 32px 40px 56px;
 }
 
 .page-title {
-  margin: 0 0 32px;
+  flex: none;
+  margin: 0 0 24px;
   font-size: 32px;
   font-weight: 600;
 }
 
-/* Grille aérée : grosses tuiles, beaucoup d'espace. */
+/* Contenu sous le titre : prend toute la hauteur restante. */
+.page-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Grille aérée : les tuiles s'étirent pour remplir l'écran. Si l'écran est
+   vraiment trop petit, seule la grille défile (sans barre visible). */
 .grid {
   display: grid;
+  flex: 1;
+  min-height: 0;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-auto-rows: minmax(120px, 1fr);
+  grid-auto-flow: dense; /* comble les trous laissés par les tuiles larges */
   gap: var(--gap);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.grid::-webkit-scrollbar {
+  display: none;
+}
+
+/* Liste qui défile (Processus) : tuiles de hauteur fixe, en haut de la zone. */
+.grid-scroll {
+  grid-auto-rows: 164px;
+  align-content: start;
+}
+
+.grid-scroll .tile-value {
+  display: block;
+  line-height: 1.3; /* évite de couper les « _ » */
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* Pages de mesures : 2 colonnes, chiffres lisibles d'un coup d'œil. */
 .grid-large {
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-}
-
-.grid-large .tile {
-  min-height: 240px;
+  grid-auto-rows: minmax(170px, 1fr);
 }
 
 .grid-large .tile-value {
-  font-size: 48px;
-}
-
-.grid-large .sparkline {
-  height: 72px;
+  font-size: clamp(32px, 6vh, 48px);
 }
 
 .tile {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
-  min-height: 160px;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
   padding: 24px;
   border-radius: var(--radius);
   background: var(--tile);
+}
+
+.tile-button {
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .tile:active {
@@ -89,15 +131,63 @@ body,
   grid-column: span 2;
 }
 
+.tile-head {
+  display: flex;
+  min-height: 28px; /* même hauteur avec ou sans badge */
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .tile-label {
   color: var(--muted);
   font-size: 16px;
 }
 
+/* Niveau de consommation : fond légèrement teinté + badge texte (jamais la couleur seule). */
+.tile-warning {
+  background: color-mix(in srgb, var(--warning) 14%, var(--tile));
+}
+
+.tile-critical {
+  background: color-mix(in srgb, var(--critical) 16%, var(--tile));
+}
+
+.tile-warning:active {
+  background: color-mix(in srgb, var(--warning) 22%, var(--tile));
+}
+
+.tile-critical:active {
+  background: color-mix(in srgb, var(--critical) 24%, var(--tile));
+}
+
+.badge {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.badge-warning {
+  background: color-mix(in srgb, var(--warning) 22%, transparent);
+  color: var(--warning-text);
+}
+
+.badge-critical {
+  background: color-mix(in srgb, var(--critical) 24%, transparent);
+  color: var(--critical-text);
+}
+
 .tile-value {
+  flex: none; /* le nom ne doit jamais être écrasé par le reste de la tuile */
+  display: -webkit-box;
+  overflow: hidden;
   font-size: 28px;
   font-weight: 600;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* un nom trop long est coupé plutôt que de déborder */
 }
 
 .tile-detail {
@@ -106,8 +196,10 @@ body,
 }
 
 .sparkline {
+  flex: 1 1 0;
   width: 100%;
-  height: 48px;
+  min-height: 24px;
+  max-height: 96px;
 }
 
 .sparkline-line {
@@ -123,6 +215,94 @@ body,
   opacity: 0.15;
 }
 
+.segmented {
+  display: inline-flex;
+  gap: 8px;
+  flex: none;
+  align-self: flex-start;
+  margin-bottom: 24px;
+  padding: 6px;
+  border-radius: var(--radius);
+  background: var(--tile);
+}
+
+.segmented button,
+.btn {
+  min-height: 56px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button.active {
+  background: var(--tile-active);
+  color: var(--text);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.dialog {
+  width: min(520px, 100%);
+  padding: 32px;
+  border-radius: var(--radius);
+  background: var(--tile);
+}
+
+.dialog h2 {
+  margin: 0 0 12px;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.dialog p {
+  margin: 0 0 32px;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.btn {
+  min-height: 72px;
+  background: var(--tile-active);
+  color: var(--text);
+}
+
+.btn-danger {
+  background: var(--danger);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 56px;
+  z-index: 5;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 16px 24px;
+  border-radius: 14px;
+  background: var(--tile-active);
+  font-size: 18px;
+}
+
 .coming-soon {
   color: var(--muted);
   font-size: 20px;
@@ -130,7 +310,7 @@ body,
 
 @media (max-width: 560px) {
   .page {
-    padding: 24px 16px 64px;
+    padding: 24px 16px 56px;
   }
   .tile-wide {
     grid-column: span 1;

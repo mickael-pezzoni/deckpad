@@ -1,20 +1,37 @@
 import type { ReactNode } from 'react'
 
+export type Tone = 'warning' | 'critical'
+
 type Props = {
   label: string
   children: ReactNode
   detail?: ReactNode
   chart?: ReactNode
   wide?: boolean
+  badge?: { text: string; tone: Tone }
+  onClick?: () => void
 }
 
-export function Tile({ label, children, detail, chart, wide }: Props) {
-  return (
-    <div className={wide ? 'tile tile-wide' : 'tile'}>
-      <span className="tile-label">{label}</span>
+export function Tile({ label, children, detail, chart, wide, badge, onClick }: Props) {
+  const className = ['tile', wide && 'tile-wide', badge && `tile-${badge.tone}`, onClick && 'tile-button']
+    .filter(Boolean)
+    .join(' ')
+  const content = (
+    <>
+      <span className="tile-head">
+        <span className="tile-label">{label}</span>
+        {badge && <span className={`badge badge-${badge.tone}`}>{badge.text}</span>}
+      </span>
       <span className="tile-value">{children}</span>
       {detail && <span className="tile-detail">{detail}</span>}
       {chart}
-    </div>
+    </>
+  )
+  return onClick ? (
+    <button type="button" className={className} onClick={onClick}>
+      {content}
+    </button>
+  ) : (
+    <div className={className}>{content}</div>
   )
 }
