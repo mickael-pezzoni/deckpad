@@ -20,6 +20,7 @@ export function NetworkPage() {
   const [publicIP, setPublicIP] = useState<string | null>(null)
   const connected = useEventStream<Net>('/api/network/stream', (n) =>
     setHistory((h) => [...h.slice(-(HISTORY - 1)), n]),
+    { keepAlive: true }, // garde les courbes complètes
   )
 
   useEffect(() => {

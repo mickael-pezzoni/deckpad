@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AppWindow, CalendarDays, Clock, Cpu, Monitor, Power, User } from 'lucide-react'
 import { Tile } from '../components/Tile'
+import { usePageActive } from '../layout/pageActive'
 
 type Info = {
   hostname: string
@@ -14,10 +15,13 @@ type Info = {
 export function InfoPage() {
   const [info, setInfo] = useState<Info | null>(null)
   const [error, setError] = useState(false)
-  const now = usePcClock(info)
+  const active = usePageActive()
+  const now = usePcClock(info, active)
 
-  // Rechargé chaque minute : suit un redémarrage du PC ou un changement de session.
+  // Rechargé chaque minute (et au retour sur la page) : suit un redémarrage du PC
+  // ou un changement de session. En pause quand la page est cachée.
   useEffect(() => {
+    if (!active) return
     const load = () =>
       fetch('/api/info')
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
@@ -29,7 +33,7 @@ export function InfoPage() {
     load()
     const id = setInterval(load, 60_000)
     return () => clearInterval(id)
-  }, [])
+  }, [active])
 
   if (error) return <p className="coming-soon">PC injoignable</p>
   if (!info || !now) return <p className="coming-soon">Chargement…</p>
@@ -55,16 +59,16 @@ export function InfoPage() {
 }
 
 // Horloge du PC : on part de l'heure envoyée par l'agent et on avance localement.
-function usePcClock(info: Info | null) {
+function usePcClock(info: Info | null, active: boolean) {
   const [now, setNow] = useState<Date | null>(null)
   useEffect(() => {
-    if (!info) return
+    if (!info || !active) return
     const offset = new Date(info.now).getTime() - Date.now()
     const tick = () => setNow(new Date(Date.now() + offset))
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [info])
+  }, [info, active])
   return now
 }
 
