@@ -3,10 +3,13 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/mickael-pezzoni/deckpad/agent/stats"
 	"github.com/mickael-pezzoni/deckpad/agent/sysinfo"
 	"github.com/mickael-pezzoni/deckpad/agent/webdist"
 )
@@ -15,6 +18,7 @@ import (
 func New() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/info", handleInfo)
+	mux.Handle("GET /api/stats/stream", streamStats(stats.NewHub(time.Second)))
 	mux.Handle("/", appHandler())
 	return mux
 }
@@ -26,6 +30,36 @@ func handleInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, info)
+}
+
+// streamStats pousse une mesure par seconde à la tablette (Server-Sent Events).
+func streamStats(hub *stats.Hub) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		rc := http.NewResponseController(w)
+
+		ch, unsubscribe := hub.Subscribe()
+		defer unsubscribe()
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			case s := <-ch:
+				data, err := json.Marshal(s)
+				if err != nil {
+					log.Printf("stats JSON : %v", err)
+					continue
+				}
+				if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+					return
+				}
+				if err := rc.Flush(); err != nil {
+					return
+				}
+			}
+		}
+	}
 }
 
 func appHandler() http.Handler {
