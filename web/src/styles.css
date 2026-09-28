@@ -380,6 +380,71 @@ body,
   color: var(--text);
 }
 
+/* Tuile loupe (components/SearchField) : même hauteur que le sélecteur de tri. */
+.search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 68px;
+  margin-bottom: 24px; /* comme le sélecteur de tri */
+  border: none;
+  border-radius: var(--radius);
+  background: var(--tile);
+  color: var(--muted);
+  font: inherit;
+}
+
+.search-closed {
+  justify-content: center;
+  width: 68px;
+  cursor: pointer;
+}
+
+.search-open {
+  flex: 1;
+  gap: 12px;
+  min-width: 0;
+  max-width: 520px;
+  padding: 0 6px 0 20px;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.search-open input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 20px;
+  outline: none;
+  user-select: text;
+}
+
+.search-open input::placeholder {
+  color: var(--muted);
+}
+
+/* Croix du navigateur masquée : on a la nôtre, plus grande. */
+.search-open input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -1564,11 +1629,11 @@ body,
   display: flex;
   flex: none;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 16px;
 }
 
 .process-total {
+  margin-left: auto;
   padding-top: 20px;
   color: var(--muted);
   font-size: 16px;
@@ -1812,10 +1877,47 @@ body,
   font-size: 0.5em;
 }
 
+/* Résultats de la recherche : petites tuiles, seule la liste défile (sans barre). */
+.process-results {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 92px;
+  align-content: start;
+  gap: 18px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.process-results::-webkit-scrollbar {
+  display: none;
+}
+
+.process-none {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+  text-align: center;
+}
+
 /* Écran étroit (téléphone) : la grande en haut, les moyennes dessous, petites par 2. */
 @media (max-width: 760px) {
   .process-total {
     display: none;
+  }
+
+  /* Recherche ouverte : elle prend la place du tri. */
+  .process-bar:has(.search-open) .segmented {
+    display: none;
+  }
+
+  /* Une colonne : les noms restent lisibles. */
+  .process-results {
+    grid-template-columns: 1fr;
   }
 
   .mosaic-top {

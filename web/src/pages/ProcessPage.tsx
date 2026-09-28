@@ -5,6 +5,7 @@ import { HoldButton } from '../components/HoldButton'
 import { AppIcon } from '../components/AppIcon'
 import { useEventStream } from '../hooks/useEventStream'
 import { Loader } from '../components/Loader'
+import { SearchField, matches } from '../components/SearchField'
 import type { Stats } from '../hooks/useStatsStream'
 
 type App = { name: string; cpu: number; ram: number; count: number }
@@ -18,6 +19,7 @@ export function ProcessPage() {
   const [sortBy, setSortBy] = useState<SortKey>('cpu')
   const [notice, setNotice] = useState<string | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
+  const [query, setQuery] = useState('')
   const connected = useEventStream<App[]>('/api/processes/stream', setApps)
   useEventStream<Stats>('/api/stats/stream', setStats)
 
@@ -42,13 +44,16 @@ export function ProcessPage() {
 
   if (!apps) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
 
-  const [top, ...rest] = [...apps].sort((a, b) => b[sortBy] - a[sortBy]).slice(0, SHOWN)
+  const sorted = [...apps].sort((a, b) => b[sortBy] - a[sortBy])
+  const searching = query.trim() !== ''
+  const found = searching ? sorted.filter((app) => matches(displayName(app.name), query)) : []
+  const [top, ...rest] = sorted.slice(0, SHOWN)
   const medium = rest.slice(0, 3)
   const small = rest.slice(3)
 
   return (
     <>
-      <div className="process-bar">
+      <div className={searching ? 'process-bar process-searching' : 'process-bar'}>
         <div className="segmented">
           <button type="button" className={sortBy === 'cpu' ? 'active' : ''} onClick={() => setSortBy('cpu')}>
             Tri CPU
@@ -57,34 +62,48 @@ export function ProcessPage() {
             Tri RAM
           </button>
         </div>
+        <SearchField value={query} onChange={setQuery} placeholder="Rechercher un processus" />
         {stats && (
           <span className="process-total">
             CPU {percent(stats.cpu)} · RAM {gb(stats.ramUsed)} / {gb(stats.ramTotal)}
           </span>
         )}
       </div>
-      {/* Mosaïque : la plus gourmande en grand, les 3 suivantes en moyen, le reste en petit. */}
-      <div className="mosaic">
-        {top && (
-          <div className="mosaic-top">
-            <ProcessTile app={top} size="large" sortBy={sortBy} onHold={() => kill(top)} onTooShort={tooShort} />
-            {medium.length > 0 && (
-              <div className="mosaic-medium">
-                {medium.map((app) => (
-                  <ProcessTile key={app.name} app={app} size="medium" sortBy={sortBy} onHold={() => kill(app)} onTooShort={tooShort} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        {small.length > 0 && (
-          <div className="mosaic-small">
-            {small.map((app) => (
+      {searching ? (
+        // Recherche : tous les processus qui correspondent, en petites tuiles ; seule la liste défile.
+        found.length > 0 ? (
+          <div className="process-results">
+            {found.map((app) => (
               <ProcessTile key={app.name} app={app} size="small" sortBy={sortBy} onHold={() => kill(app)} onTooShort={tooShort} />
             ))}
           </div>
-        )}
-      </div>
+        ) : (
+          <p className="process-none">Aucun processus ne correspond à «&nbsp;{query.trim()}&nbsp;»</p>
+        )
+      ) : (
+        /* Mosaïque : la plus gourmande en grand, les 3 suivantes en moyen, le reste en petit. */
+        <div className="mosaic">
+          {top && (
+            <div className="mosaic-top">
+              <ProcessTile app={top} size="large" sortBy={sortBy} onHold={() => kill(top)} onTooShort={tooShort} />
+              {medium.length > 0 && (
+                <div className="mosaic-medium">
+                  {medium.map((app) => (
+                    <ProcessTile key={app.name} app={app} size="medium" sortBy={sortBy} onHold={() => kill(app)} onTooShort={tooShort} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {small.length > 0 && (
+            <div className="mosaic-small">
+              {small.map((app) => (
+                <ProcessTile key={app.name} app={app} size="small" sortBy={sortBy} onHold={() => kill(app)} onTooShort={tooShort} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {/* Hors du carrousel : sinon « fixed » se place par rapport aux slides. */}
       {notice && createPortal(<div className="toast">{notice}</div>, document.body)}
     </>
