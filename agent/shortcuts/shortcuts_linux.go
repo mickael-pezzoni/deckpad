@@ -128,3 +128,46 @@ func defaults() []Shortcut {
 			Command: "gnome-calculator || kcalc || galculator || xcalc"},
 	}
 }
+
+// Pour taper du texte sous Wayland, wtype comprend tous les caractères mais ne
+// marche pas sous GNOME ; ydotool marche partout mais tape selon un clavier
+// QWERTY (les accents et la disposition AZERTY peuvent donner d'autres lettres).
+func typeAvailable() Availability {
+	switch {
+	case wayland():
+		if _, err := exec.LookPath("wtype"); err == nil {
+			return Availability{OK: true}
+		}
+		if _, err := exec.LookPath("ydotool"); err != nil {
+			return Availability{Reason: "Sous Wayland, installe wtype ou ydotool pour taper du texte"}
+		}
+	case os.Getenv("DISPLAY") != "":
+		if _, err := exec.LookPath("xdotool"); err != nil {
+			return Availability{Reason: "Installe xdotool pour taper du texte"}
+		}
+	default:
+		return Availability{Reason: "Aucune session graphique"}
+	}
+	return Availability{OK: true}
+}
+
+func typeText(text string) error {
+	var cmds [][]string
+	if wayland() {
+		cmds = [][]string{{"wtype", "--", text}, {"ydotool", "type", "--", text}}
+	} else {
+		cmds = [][]string{{"xdotool", "type", "--clearmodifiers", "--delay", "8", "--", text}}
+	}
+	var err error
+	for _, c := range cmds {
+		if _, e := exec.LookPath(c[0]); e != nil {
+			continue
+		}
+		out, e := exec.Command(c[0], c[1:]...).CombinedOutput()
+		if e == nil {
+			return nil
+		}
+		err = fmt.Errorf("%s : %v %s", c[0], e, strings.TrimSpace(string(out)))
+	}
+	return err
+}
