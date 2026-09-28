@@ -92,12 +92,12 @@ func handleCA(sec *Secure) http.HandlerFunc {
 
 func handleHandoff(store *auth.Store, h *handoffs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c, err := r.Cookie(tokenCookie)
-		if err != nil || !store.Valid(c.Value) {
+		tok := token(r)
+		if !store.Valid(tok) {
 			http.Error(w, "appareil non appairé", http.StatusUnauthorized)
 			return
 		}
-		code, err := h.add(c.Value)
+		code, err := h.add(tok)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -177,8 +177,12 @@ func lanIP() net.IP {
 }
 
 func setToken(w http.ResponseWriter, r *http.Request, token string) {
+	name := tokenCookie
+	if r.TLS != nil {
+		name = secureTokenCookie
+	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     tokenCookie,
+		Name:     name,
 		Value:    token,
 		Path:     "/",
 		MaxAge:   10 * 365 * 24 * 3600, // l'appareil reste appairé jusqu'à révocation

@@ -14,7 +14,26 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
 )
 
-const tokenCookie = "deckpad_token"
+// Deux cookies distincts : en HTTPS le cookie est « Secure », et le navigateur
+// interdit au HTTP de poser un cookie du même nom par-dessus. Avec un seul nom,
+// passer une fois en HTTPS cassait l'appairage en HTTP (serveur de dev notamment).
+const (
+	tokenCookie       = "deckpad_token"
+	secureTokenCookie = "deckpad_token_s"
+)
+
+// token renvoie la clé envoyée par la tablette, selon le protocole.
+func token(r *http.Request) string {
+	if r.TLS != nil {
+		if c, err := r.Cookie(secureTokenCookie); err == nil {
+			return c.Value
+		}
+	}
+	if c, err := r.Cookie(tokenCookie); err == nil {
+		return c.Value
+	}
+	return ""
+}
 
 //go:embed pairwin.html
 var pairWindowHTML []byte
@@ -31,8 +50,7 @@ func requireToken(store *auth.Store, next http.Handler) http.Handler {
 }
 
 func paired(store *auth.Store, r *http.Request) bool {
-	c, err := r.Cookie(tokenCookie)
-	return err == nil && store.Valid(c.Value)
+	return store.Valid(token(r))
 }
 
 func handlePairStatus(store *auth.Store) http.HandlerFunc {

@@ -15,6 +15,8 @@ async function secureStep(afterPairing: boolean): Promise<string | null> {
   if (!onInsecureLan()) return null
   const port = await securePort()
   if (!port) return null
+  // En dev (Vite), on reste sur le serveur de dev : le HTTPS sert l'appli construite, pas le code en cours.
+  if (import.meta.env.DEV) return afterPairing ? port : null
   if (alreadySecured() && (await secureReachable(port)) && (await goSecure(port))) return null
   return afterPairing || !askedRecently() ? port : null
 }
