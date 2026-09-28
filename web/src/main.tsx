@@ -4,7 +4,9 @@ import App from './App'
 import './styles.css'
 import { installClickSound } from './feedback/clickSound'
 import { installKeepAwake } from './feedback/keepAwake'
+import { applyTheme, getTheme } from './theme/theme'
 
+applyTheme(getTheme()) // avant le premier rendu : pas de flash du mauvais thème
 installClickSound()
 installKeepAwake()
 
