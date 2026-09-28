@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ClipboardCopy, Copy, Download, Monitor, X } from 'lucide-react'
 import { Loader } from '../components/Loader'
+import { SideScroll } from '../components/SideScroll'
 import { ACTION_ICONS, HistoryChip } from '../components/HistoryChip'
 import { useEventStream } from '../hooks/useEventStream'
 import { copyToDevice, looksLikeURL } from '../clipboard/copy'
@@ -66,7 +67,6 @@ export function ClipboardPage() {
         <div className="clip-send">
           <div className="clip-input">
             <textarea
-              className="swiper-no-swiping"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Écris ou colle un texte, un lien…"
@@ -123,7 +123,7 @@ export function ClipboardPage() {
       </div>
 
       {history.length > 0 && (
-        <div className="clip-history swiper-no-swiping">
+        <SideScroll className="clip-history">
           {history.map((h) => (
             <HistoryChip
               key={h.id}
@@ -135,7 +135,7 @@ export function ClipboardPage() {
               }}
             />
           ))}
-        </div>
+        </SideScroll>
       )}
 
       {notice && createPortal(<div className="toast">{notice}</div>, document.body)}
@@ -156,7 +156,7 @@ function PCContent({ state, connected }: { state: ClipboardState | null; connect
   }
   if (state.text) {
     return (
-      <div className="clip-pc-text swiper-no-swiping">
+      <div className="clip-pc-text">
         {state.text}
         {state.truncated && <span className="clip-pc-more">… (texte trop long, début seulement)</span>}
       </div>

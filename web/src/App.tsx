@@ -5,6 +5,7 @@ import 'swiper/css'
 import { pages } from './pages'
 import { AppShell } from './layout/AppShell'
 import { PageShell } from './layout/PageShell'
+import { swipeFromFields } from './layout/swipeFromFields'
 import { PairingScreen } from './pairing/PairingScreen'
 import { SecureSetup } from './pairing/SecureSetup'
 import { alreadySecured, askedRecently, claimHandoff, goSecure, onInsecureLan, securePort, secureReachable } from './pairing/secure'
@@ -36,6 +37,8 @@ export default function App() {
       setPaired(s.paired)
     })()
   }, [])
+
+  useEffect(swipeFromFields, [])
 
   const onPaired = async () => {
     setSecurePortOffer(await secureStep(true))

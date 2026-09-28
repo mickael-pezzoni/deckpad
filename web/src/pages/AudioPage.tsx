@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Headphones, Mic, MicOff, MonitorSpeaker, Speaker, Volume2, type LucideIcon } from 'lucide-react'
 import { VolumeFader } from '../components/VolumeFader'
 import { AppIcon } from '../components/AppIcon'
+import { SideScroll } from '../components/SideScroll'
 import { Loader } from '../components/Loader'
 import { useEventStream } from '../hooks/useEventStream'
 import { useLatched } from '../hooks/useLatched'
@@ -56,7 +57,7 @@ export function AudioPage() {
         />
         <MicButton mic={state.mic} onMute={(m) => setMute('mic', m)} />
       </div>
-      <Mixer>
+      <SideScroll className="mixer">
         {state.master ? (
           <VolumeFader
             label="Général"
@@ -86,7 +87,7 @@ export function AudioPage() {
           />
         ))}
         {state.master && state.apps.length === 0 && <p className="mixer-empty">Aucune appli ne joue de son</p>}
-      </Mixer>
+      </SideScroll>
       {notice && createPortal(<div className="toast">{notice}</div>, document.body)}
     </>
   )
@@ -150,29 +151,6 @@ function MicButton({ mic, onMute }: { mic: Level | null; onMute: (muted: boolean
   )
 }
 
-// Rangée de curseurs. Si elle déborde (beaucoup d'applis), elle défile de côté :
-// il faut alors bloquer le changement de page quand on la fait glisser.
-function Mixer({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [overflows, setOverflows] = useState(false)
-
-  const check = () => {
-    const el = ref.current
-    if (el) setOverflows(el.scrollWidth > el.clientWidth + 1)
-  }
-  useLayoutEffect(check) // une appli en plus ou en moins
-  useLayoutEffect(() => {
-    const ro = new ResizeObserver(check) // rotation de la tablette
-    ro.observe(ref.current!)
-    return () => ro.disconnect()
-  }, [])
-
-  return (
-    <div ref={ref} className={overflows ? 'mixer swiper-no-swiping' : 'mixer'}>
-      {children}
-    </div>
-  )
-}
 
 // Devine le type de sortie d'après son nom (Windows et Linux, en français ou en anglais).
 function deviceIcon(name: string): LucideIcon {
