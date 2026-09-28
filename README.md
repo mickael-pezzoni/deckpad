@@ -1,95 +1,98 @@
 # deckpad
 
-Piloter son PC depuis une tablette pendant qu'on joue : des pages par thème, en swipe, avec de grosses tuiles.
+Control your PC from a tablet while you play: themed pages you swipe through, with big tiles.
 
-- `agent/` : programme Go qui tourne sur le PC (API + appli tablette embarquée), un seul `.exe`.
-- `web/` : appli tablette (React + Vite + Swiper), installable en PWA.
+- `agent/`: Go program running on the PC (API + embedded tablet app), a single `.exe`.
+- `web/`: tablet app (React + Vite + Swiper), installable as a PWA. Available in English and French.
 
-## Aperçu
+## Preview
 
-![Infos PC](docs/screenshots/infos.png)
+![PC info](docs/screenshots/info.png)
 
 | | |
 |---|---|
-| ![Stats](docs/screenshots/stats.png) Stats | ![Processus](docs/screenshots/processus.png) Processus |
-| ![Réseau](docs/screenshots/reseau.png) Réseau | ![Audio](docs/screenshots/audio.png) Audio |
-| ![Médias](docs/screenshots/medias.png) Médias | ![Raccourcis](docs/screenshots/raccourcis.png) Raccourcis |
-| ![Fichiers](docs/screenshots/fichiers.png) Fichiers | ![Presse-papiers](docs/screenshots/presse-papiers.png) Presse-papiers |
-| ![Système](docs/screenshots/systeme.png) Système | ![Thème clair](docs/screenshots/infos-clair.png) Thème clair |
+| ![Stats](docs/screenshots/stats.png) Stats | ![Processes](docs/screenshots/processes.png) Processes |
+| ![Network](docs/screenshots/network.png) Network | ![Audio](docs/screenshots/audio.png) Audio |
+| ![Media](docs/screenshots/media.png) Media | ![Shortcuts](docs/screenshots/shortcuts.png) Shortcuts |
+| ![Files](docs/screenshots/files.png) Files | ![Clipboard](docs/screenshots/clipboard.png) Clipboard |
+| ![System](docs/screenshots/system.png) System | ![Light theme](docs/screenshots/info-light.png) Light theme |
+| ![Settings](docs/screenshots/settings.png) Settings | ![In French](docs/screenshots/processes-french.png) In French |
 
-Sur téléphone aussi :
+On phones too:
 
 <p>
-  <img src="docs/screenshots/stats-telephone.png" alt="Stats sur téléphone" width="240">
-  <img src="docs/screenshots/reseau-telephone.png" alt="Réseau sur téléphone" width="240">
+  <img src="docs/screenshots/stats-phone.png" alt="Stats on a phone" width="240">
+  <img src="docs/screenshots/network-phone.png" alt="Network on a phone" width="240">
 </p>
 
-## Utiliser
+## Usage
 
-1. Lancer `deckpad.exe` sur le PC. Il affiche l'adresse à ouvrir (ex : `http://192.168.1.20:8420`).
-2. Ouvrir cette adresse sur la tablette, puis « Ajouter à l'écran d'accueil ».
+1. Run `deckpad.exe` on the PC. It shows the address to open (e.g. `http://192.168.1.20:8420`).
+2. Open that address on the tablet, then "Add to Home screen".
 
-### Installer l'appli sur la tablette (PWA)
+### Install the app on the tablet (PWA)
 
-Les navigateurs n'installent une vraie appli (plein écran, icône, cache) qu'en HTTPS. deckpad sert donc aussi l'appli en HTTPS sur le port 8421, avec son propre certificat.
+Browsers only install a real app (full screen, icon, cache) over HTTPS. So deckpad also serves the app over HTTPS on port 8421, with its own certificate.
 
-Juste après l'appairage, la tablette propose de passer en connexion sécurisée, en 3 étapes (une seule fois) :
+Right after pairing, the tablet offers to switch to a secure connection, in 3 steps (only once):
 
-1. « Télécharger le certificat ».
-2. Android : dans Paramètres, chercher « Certificat CA » et choisir `deckpad-ca.crt`. iPad : Réglages › Profil téléchargé › Installer, puis Réglages › Général › Informations › Réglages des certificats, activer deckpad.
-3. « Continuer en sécurisé » : la tablette passe en HTTPS sans refaire l'appairage. Il ne reste qu'à installer l'appli (menu ⋮ → « Installer l'application » sur Chrome).
+1. "Download the certificate".
+2. Android: in Settings, search for "CA certificate" and pick `deckpad-ca.crt`. iPad: Settings › Profile Downloaded › Install, then Settings › General › About › Certificate Trust Settings, turn on deckpad.
+3. "Continue securely": the tablet switches to HTTPS without pairing again. All that's left is installing the app (⋮ menu → "Install app" in Chrome).
 
-À savoir :
+Good to know:
 
-- Au premier lancement, deckpad crée sa petite autorité de certification dans `%APPDATA%\deckpad` (Windows) ou `~/.config/deckpad` (Linux) : `ca.crt` et `ca.key`. La clé ne quitte jamais le PC. Elle ne peut signer que des adresses du réseau local, donc elle ne servirait à rien pour se faire passer pour un autre site.
-- Si l'adresse du PC change, le certificat est refait tout seul, sans rien réinstaller sur la tablette.
-- Android affiche ensuite « le réseau peut être surveillé » : c'est normal après l'installation d'un certificat.
-- `-https-addr ""` désactive le HTTPS. En mode développement, le HTTPS sert l'appli construite : lancer `npm run build` avant de tester cette étape.
+- On first launch, deckpad creates its own small certificate authority in `%APPDATA%\deckpad` (Windows) or `~/.config/deckpad` (Linux): `ca.crt` and `ca.key`. The key never leaves the PC. It can only sign local network addresses, so it would be useless to impersonate another website.
+- If the PC's address changes, the certificate is regenerated automatically, with nothing to reinstall on the tablet.
+- Android then shows "network may be monitored": this is normal after installing a certificate.
+- `-https-addr ""` disables HTTPS. In development mode, HTTPS serves the built app: run `npm run build` before testing this step.
 
-Sans certificat, sur Android, on peut aussi activer `chrome://flags/#unsafely-treat-insecure-origin-as-secure` avec l'adresse HTTP du PC, puis installer l'appli.
+Without a certificate, on Android, you can also enable `chrome://flags/#unsafely-treat-insecure-origin-as-secure` with the PC's HTTP address, then install the app.
 
-### Appairer une tablette
+### Pair a tablet
 
-Tant qu'aucune tablette n'est appairée, le PC ouvre au lancement une petite fenêtre avec un QR code de l'adresse à ouvrir. La tablette affiche ensuite un pavé numérique et la fenêtre un code à 6 chiffres (aussi écrit dans la console). Taper ce code sur la tablette : elle reçoit une clé et n'aura plus à le refaire.
+As long as no tablet is paired, the PC opens a small window at launch with a QR code of the address to open. The tablet then shows a keypad and the window a 6-digit code (also printed in the console). Type that code on the tablet: it receives a key and won't have to do it again.
 
-- Le code expire après 5 minutes et se bloque après 5 erreurs.
-- Chaque appareil a sa propre clé. Le PC n'en garde que l'empreinte, dans `%APPDATA%\deckpad\devices.json` (Windows) ou `~/.config/deckpad/devices.json` (Linux). Supprimer ce fichier désappaire tout.
-- La fenêtre s'ouvre avec Edge ou Chrome (Chromium sous Linux), sinon dans le navigateur par défaut.
+- The code expires after 5 minutes and locks after 5 wrong attempts.
+- Each device has its own key. The PC only keeps its fingerprint, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs everything.
+- The window opens with Edge or Chrome (Chromium on Linux), otherwise in the default browser.
 
-## Construire l'exe
+## Build the exe
 
-Prérequis : [Go](https://go.dev/dl/) et [Node.js](https://nodejs.org/).
+Requirements: [Go](https://go.dev/dl/) and [Node.js](https://nodejs.org/).
 
 ```
 .\build.ps1      # Windows
 ./build.sh       # macOS / Linux
 ```
 
-Résultat : `bin/deckpad.exe`.
+Output: `bin/deckpad.exe`.
 
-## Développer
+## Develop
 
-Deux terminaux :
+Two terminals:
 
 ```
-cd agent && go run .        # API sur :8420
+cd agent && go run .        # API on :8420
 cd web && npm install && npm run dev
 ```
 
-Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recharge à chaque sauvegarde et les appels `/api` sont redirigés vers l'agent.
+Open the address shown by Vite (on the PC or the tablet). The app reloads on every save and `/api` calls are proxied to the agent.
+
+App texts: `web/src/i18n/en.ts` and `web/src/i18n/fr.ts` (react-i18next). A text added in one language must also be added in the other: the build fails otherwise.
 
 ## Pages
 
-| Page | État |
+| Page | Status |
 |---|---|
-| Infos PC | ✅ |
-| Stats | ✅ CPU, RAM, GPU toutes marques (FPS et température GPU AMD sous Windows à venir) |
-| Processus | ✅ applications de l'utilisateur, tri CPU/RAM, fermeture avec confirmation |
-| Fichiers | ✅ disques et clés USB, navigation dans les dossiers (lecture seule) |
-| Réseau | ✅ débit en direct, latence, IP locale et publique, type de connexion |
-| Audio | ✅ volume général et par appli, micro, choix de la sortie (casque, enceintes…). Sous Linux : `pactl` requis (fourni avec PulseAudio / PipeWire) |
-| Médias | ✅ titre, artiste, pochette, lecture/pause, suivant/précédent (Spotify, YouTube dans le navigateur, VLC…). Windows 10 1809+ ; sous Linux, tout lecteur compatible MPRIS |
-| Raccourcis | ✅ tuiles configurables depuis la tablette (appui long pour modifier) : combinaison de touches, programme, dossier ou adresse web, capture de l'écran copiée dans le presse-papiers. Enregistrés dans `%APPDATA%\deckpad\shortcuts.json` (Windows) ou `~/.config/deckpad/shortcuts.json` (Linux). Sous Linux, les touches demandent `xdotool` (X11) ou `ydotool` (Wayland), la capture `gnome-screenshot`, `spectacle`, `grim` + `wl-copy` ou `maim` + `xclip` |
-| Presse-papiers | ✅ envoyer un texte au PC (copier, ouvrir, taper), voir le presse-papiers du PC, historique |
-| Système | ✅ verrouiller, veille, redémarrer, éteindre (appui long) |
-| Paramètres | à venir |
+| PC info | ✅ |
+| Stats | ✅ CPU, RAM, GPU of any brand (FPS and AMD GPU temperature on Windows to come) |
+| Processes | ✅ user applications, sort by CPU/RAM, close with a long press |
+| Files | ✅ drives and USB sticks, folder browsing (read-only) |
+| Network | ✅ live throughput, latency, local and public IP, connection type |
+| Audio | ✅ master and per-app volume, microphone, output choice (headset, speakers…). On Linux: `pactl` required (ships with PulseAudio / PipeWire) |
+| Media | ✅ title, artist, cover, play/pause, next/previous (Spotify, YouTube in the browser, VLC…). Windows 10 1809+; on Linux, any MPRIS-compatible player |
+| Shortcuts | ✅ tiles configured from the tablet (long press to edit): key combination, program, folder or web address, screen capture copied to the clipboard. Stored in `%APPDATA%\deckpad\shortcuts.json` (Windows) or `~/.config/deckpad/shortcuts.json` (Linux). On Linux, keys need `xdotool` (X11) or `ydotool` (Wayland), capture needs `gnome-screenshot`, `spectacle`, `grim` + `wl-copy` or `maim` + `xclip` |
+| Clipboard | ✅ send text to the PC (copy, open, type), see the PC clipboard, history |
+| System | ✅ lock, sleep, restart, shut down (long press) |
+| Settings | ✅ language (the device's language on first launch, English if it is neither English nor French) and start page, saved on the tablet |

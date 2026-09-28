@@ -6,6 +6,7 @@ import { pages } from './pages'
 import { AppShell } from './layout/AppShell'
 import { PageShell } from './layout/PageShell'
 import { swipeFromFields } from './layout/swipeFromFields'
+import { getStartPage } from './settings/startPage'
 import { PairingScreen } from './pairing/PairingScreen'
 import { SecureSetup } from './pairing/SecureSetup'
 import { alreadySecured, askedRecently, claimHandoff, goSecure, onInsecureLan, securePort, secureReachable } from './pairing/secure'
@@ -26,8 +27,10 @@ export default function App() {
   const [paired, setPaired] = useState<boolean | null>(null)
   const [securePortOffer, setSecurePortOffer] = useState<string | null>(null)
   const [swiper, setSwiper] = useState<SwiperInstance | null>(null)
-  const [current, setCurrent] = useState(0) // suit le doigt : le menu réagit tout de suite
-  const [shown, setShown] = useState(0) // page arrivée : c'est elle seule qui se met à jour
+  // Page de départ choisie dans Paramètres (Infos PC par défaut), lue une fois au lancement.
+  const [startIndex] = useState(() => Math.max(0, pages.findIndex((p) => p.id === getStartPage())))
+  const [current, setCurrent] = useState(startIndex) // suit le doigt : le menu réagit tout de suite
+  const [shown, setShown] = useState(startIndex) // page arrivée : c'est elle seule qui se met à jour
 
   useEffect(() => {
     ;(async () => {
@@ -56,20 +59,21 @@ export default function App() {
     () => (
       <Swiper
         className="deck"
+        initialSlide={startIndex}
         onSwiper={setSwiper}
         onSlideChange={(s) => setCurrent(s.activeIndex)}
         onSlideChangeTransitionEnd={(s) => setShown(s.activeIndex)}
       >
-        {pages.map(({ id, title }, i) => (
+        {pages.map(({ id }, i) => (
           <SwiperSlide key={id}>
-            <PageShell title={title} active={i === shown}>
+            <PageShell id={id} active={i === shown}>
               {content[i]}
             </PageShell>
           </SwiperSlide>
         ))}
       </Swiper>
     ),
-    [shown, content],
+    [shown, content, startIndex],
   )
 
   if (paired === null) return null

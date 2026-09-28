@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
+import { decimal, gb, mb, percent } from '../format'
 import type { Tone } from '../components/Tile'
 import { HoldButton } from '../components/HoldButton'
 import { AppIcon } from '../components/AppIcon'
@@ -15,6 +18,7 @@ const SHOWN = 12
 const HOLD_MS = 1500
 
 export function ProcessPage() {
+  const { t } = useTranslation()
   const [apps, setApps] = useState<App[] | null>(null)
   const [sortBy, setSortBy] = useState<SortKey>('cpu')
   const [notice, setNotice] = useState<string | null>(null)
@@ -35,14 +39,14 @@ export function ProcessPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: app.name }),
     }).catch(() => null)
-    if (r?.ok) setNotice(`${displayName(app.name)} fermé`)
-    else if (r?.status === 403) setNotice(`Impossible de fermer ${displayName(app.name)} : droits administrateur requis`)
-    else setNotice(`Impossible de fermer ${displayName(app.name)}`)
+    if (r?.ok) setNotice(t('process.closed', { name: displayName(app.name) }))
+    else if (r?.status === 403) setNotice(t('process.adminRequired', { name: displayName(app.name) }))
+    else setNotice(t('process.cannotClose', { name: displayName(app.name) }))
   }
 
-  const tooShort = () => setNotice('Maintenir appuyé pour fermer')
+  const tooShort = () => setNotice(t('process.holdToClose'))
 
-  if (!apps) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
+  if (!apps) return <Loader label={connected ? undefined : t('common.connecting')} />
 
   const sorted = [...apps].sort((a, b) => b[sortBy] - a[sortBy])
   const searching = query.trim() !== ''
@@ -56,16 +60,16 @@ export function ProcessPage() {
       <div className={searching ? 'process-bar process-searching' : 'process-bar'}>
         <div className="segmented">
           <button type="button" className={sortBy === 'cpu' ? 'active' : ''} onClick={() => setSortBy('cpu')}>
-            Tri CPU
+            {t('process.sortCpu')}
           </button>
           <button type="button" className={sortBy === 'ram' ? 'active' : ''} onClick={() => setSortBy('ram')}>
-            Tri RAM
+            {t('process.sortRam')}
           </button>
         </div>
-        <SearchField value={query} onChange={setQuery} placeholder="Rechercher un processus" />
+        <SearchField value={query} onChange={setQuery} placeholder={t('process.search')} />
         {stats && (
           <span className="process-total">
-            CPU {percent(stats.cpu)} · RAM {gb(stats.ramUsed)} / {gb(stats.ramTotal)}
+            CPU {percent(stats.cpu)} · RAM {gb(stats.ramUsed)} / {gb(stats.ramTotal)} {t('units.GB')}
           </span>
         )}
       </div>
@@ -78,7 +82,7 @@ export function ProcessPage() {
             ))}
           </div>
         ) : (
-          <p className="process-none">Aucun processus ne correspond à «&nbsp;{query.trim()}&nbsp;»</p>
+          <p className="process-none">{t('process.none', { query: query.trim() })}</p>
         )
       ) : (
         /* Mosaïque : la plus gourmande en grand, les 3 suivantes en moyen, le reste en petit. */
@@ -119,8 +123,9 @@ type TileProps = {
 }
 
 function ProcessTile({ app, size, sortBy, onHold, onTooShort }: TileProps) {
+  const { t } = useTranslation()
   const badge = usageBadge(app)
-  const count = app.count > 1 ? `${app.count} processus` : '1 processus'
+  const count = t('process.count', { count: app.count })
   const className = ['process-tile', `process-${size}`, badge && `tile-${badge.tone}`]
     .filter(Boolean)
     .join(' ')
@@ -147,7 +152,7 @@ function ProcessTile({ app, size, sortBy, onHold, onTooShort }: TileProps) {
       {size === 'large' && (
         <>
           <span className="process-figures">
-            <Figure value={app.cpu.toFixed(1).replace('.', ',')} unit="%" label="CPU" />
+            <Figure value={decimal(app.cpu)} unit="%" label="CPU" />
             <Figure {...splitUnit(mb(app.ram))} label="RAM" />
           </span>
           {badgeEl}
@@ -180,29 +185,15 @@ function splitUnit(text: string) {
   return { value: text.slice(0, i), unit: text.slice(i + 1) }
 }
 
-function percent(value: number) {
-  return `${value.toFixed(1).replace('.', ',')} %`
-}
-
-function gb(bytes: number) {
-  return `${(bytes / GB).toFixed(1).replace('.', ',')} Go`
-}
-
 // Seuils de consommation : CPU en % de la machine, RAM en octets.
 const GB = 1024 ** 3
 
 function usageBadge(app: App): { text: string; tone: Tone } | undefined {
-  if (app.cpu >= 50 || app.ram >= 4 * GB) return { text: 'Très élevé', tone: 'critical' }
-  if (app.cpu >= 20 || app.ram >= 2 * GB) return { text: 'Élevé', tone: 'warning' }
+  if (app.cpu >= 50 || app.ram >= 4 * GB) return { text: i18n.t('common.veryHigh'), tone: 'critical' }
+  if (app.cpu >= 20 || app.ram >= 2 * GB) return { text: i18n.t('common.high'), tone: 'warning' }
   return undefined
 }
 
 function displayName(name: string) {
   return name.replace(/\.exe$/i, '')
-}
-
-function mb(bytes: number) {
-  return bytes >= 1024 ** 3
-    ? `${(bytes / 1024 ** 3).toFixed(1).replace('.', ',')} Go`
-    : `${Math.round(bytes / 1024 ** 2)} Mo`
 }

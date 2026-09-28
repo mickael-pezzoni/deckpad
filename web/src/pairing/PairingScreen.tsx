@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Delete, MonitorSmartphone } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 
 const LENGTH = 6
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'] as const
@@ -9,21 +11,22 @@ type Status =
   | { kind: 'ready' }
   | { kind: 'checking' }
   | { kind: 'wrong'; remaining: number }
-  | { kind: 'blocked'; message: string } // code expiré ou trop d'essais : il faut un nouveau code
+  | { kind: 'blocked'; message: 'pairing.tooMany' | 'pairing.expired' } // code expiré ou trop d'essais : il faut un nouveau code
   | { kind: 'offline' }
 
 // Nom affiché dans la liste des appareils appairés.
 function deviceName() {
   const ua = navigator.userAgent
-  if (/iPad|Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return 'iPad'
-  if (/Android/.test(ua)) return 'Tablette Android'
-  if (/Windows/.test(ua)) return 'Navigateur Windows'
-  if (/Linux/.test(ua)) return 'Navigateur Linux'
-  return 'Tablette'
+  if (/iPad|Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return i18n.t('pairing.deviceIpad')
+  if (/Android/.test(ua)) return i18n.t('pairing.deviceAndroid')
+  if (/Windows/.test(ua)) return i18n.t('pairing.deviceWindows')
+  if (/Linux/.test(ua)) return i18n.t('pairing.deviceLinux')
+  return i18n.t('pairing.deviceOther')
 }
 
 // Premier lancement : le PC affiche un code, on le tape ici.
 export function PairingScreen({ onPaired }: { onPaired: () => void }) {
+  const { t } = useTranslation()
   const [digits, setDigits] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'starting' })
 
@@ -32,7 +35,7 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
     setStatus({ kind: 'starting' })
     const r = await fetch('/api/pair/start', { method: 'POST' }).catch(() => null)
     if (!r) setStatus({ kind: 'offline' })
-    else if (r.status === 429) setStatus({ kind: 'blocked', message: "Trop d'essais. Réessaie dans quelques minutes." })
+    else if (r.status === 429) setStatus({ kind: 'blocked', message: 'pairing.tooMany' })
     else setStatus(r.ok ? { kind: 'ready' } : { kind: 'offline' })
   }, [])
 
@@ -52,8 +55,8 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
       const err = await r?.json().catch(() => null)
       setDigits('')
       if (err?.reason === 'bad-code') setStatus({ kind: 'wrong', remaining: err.remaining })
-      else if (err?.reason === 'locked') setStatus({ kind: 'blocked', message: "Trop d'essais. Réessaie dans quelques minutes." })
-      else if (err?.reason === 'expired') setStatus({ kind: 'blocked', message: 'Code expiré.' })
+      else if (err?.reason === 'locked') setStatus({ kind: 'blocked', message: 'pairing.tooMany' })
+      else if (err?.reason === 'expired') setStatus({ kind: 'blocked', message: 'pairing.expired' })
       else setStatus({ kind: 'offline' })
     },
     [onPaired],
@@ -90,29 +93,29 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
   let message: string
   switch (status.kind) {
     case 'starting':
-      message = 'Demande du code…'
+      message = t('pairing.starting')
       break
     case 'checking':
-      message = 'Vérification…'
+      message = t('pairing.checking')
       break
     case 'wrong':
-      message = `Code incorrect. ${status.remaining} essai${status.remaining > 1 ? 's' : ''} restant${status.remaining > 1 ? 's' : ''}.`
+      message = t('pairing.wrong', { count: status.remaining })
       break
     case 'blocked':
-      message = status.message
+      message = t(status.message)
       break
     case 'offline':
-      message = 'Le PC ne répond pas. Vérifie que deckpad est lancé.'
+      message = t('pairing.offline')
       break
     default:
-      message = "Tape le code affiché sur l'écran du PC."
+      message = t('pairing.prompt')
   }
 
   return (
     <main className="pairing">
       <div className="pairing-intro">
         <MonitorSmartphone size={40} strokeWidth={1.75} aria-hidden className="pairing-icon" />
-        <h1>Associer cette tablette</h1>
+        <h1>{t('pairing.title')}</h1>
         <p className={`pairing-message${status.kind === 'wrong' || status.kind === 'blocked' ? ' is-error' : ''}`} role="status">
           {message}
         </p>
@@ -123,7 +126,7 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
         </div>
         {(status.kind === 'blocked' || status.kind === 'offline') && (
           <button type="button" className="btn" onClick={start}>
-            Nouveau code
+            {t('pairing.newCode')}
           </button>
         )}
       </div>
@@ -135,9 +138,9 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
             className={`key${k.length > 1 ? ' key-muted' : ''}`}
             onClick={() => press(k)}
             disabled={locked || (k.length > 1 && digits === '')}
-            aria-label={k === 'back' ? 'Effacer le dernier chiffre' : k === 'clear' ? 'Tout effacer' : k}
+            aria-label={k === 'back' ? t('pairing.backspace') : k === 'clear' ? t('pairing.clearAll') : k}
           >
-            {k === 'back' ? <Delete size={32} strokeWidth={1.75} /> : k === 'clear' ? 'Effacer' : k}
+            {k === 'back' ? <Delete size={32} strokeWidth={1.75} /> : k === 'clear' ? t('common.clear') : k}
           </button>
         ))}
       </div>

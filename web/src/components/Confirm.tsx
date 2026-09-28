@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 type Props = {
   title: string
@@ -10,6 +11,7 @@ type Props = {
 
 // Fenêtre de confirmation plein écran, avec deux gros boutons.
 export function Confirm({ title, message, confirmLabel, onConfirm, onCancel }: Props) {
+  const { t } = useTranslation()
   return createPortal(
     <div className="overlay" onClick={onCancel}>
       <div className="dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal>
@@ -17,7 +19,7 @@ export function Confirm({ title, message, confirmLabel, onConfirm, onCancel }: P
         <p>{message}</p>
         <div className="dialog-actions">
           <button type="button" className="btn" onClick={onCancel}>
-            Annuler
+            {t('common.cancel')}
           </button>
           <button type="button" className="btn btn-danger" onClick={onConfirm}>
             {confirmLabel}

@@ -1,4 +1,7 @@
 import { Cpu, Gauge, Gpu, MemoryStick, type LucideIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
+import { gb } from '../format'
 import type { Tone } from '../components/Tile'
 import { Sparkline, type Thresholds } from '../components/Sparkline'
 import { useStatsStream, type Stats } from '../hooks/useStatsStream'
@@ -15,9 +18,10 @@ type Metric = {
 
 // Une ligne par mesure : le chiffre à gauche, la courbe de la dernière minute sur toute la largeur.
 export function StatsPage() {
+  const { t } = useTranslation()
   const { latest, history, connected } = useStatsStream()
 
-  if (!latest) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
+  if (!latest) return <Loader label={connected ? undefined : t('common.connecting')} />
 
   const ramPct = (s: Stats) => (s.ramUsed / s.ramTotal) * 100
   const gpu = latest.gpu
@@ -27,7 +31,7 @@ export function StatsPage() {
       label: 'RAM',
       icon: MemoryStick,
       value: ramPct(latest),
-      detail: `${gb(latest.ramUsed)} / ${gb(latest.ramTotal)} Go`,
+      detail: `${gb(latest.ramUsed)} / ${gb(latest.ramTotal)} ${t('units.GB')}`,
       thresholds: RAM,
       series: history.map(ramPct),
     },
@@ -35,7 +39,7 @@ export function StatsPage() {
       label: 'GPU',
       icon: Gpu,
       value: gpu ? gpu.usage : null,
-      detail: gpu ? gpuDetail(gpu) : 'Non détecté',
+      detail: gpu ? gpuDetail(gpu) : t('stats.notDetected'),
       thresholds: LOAD,
       series: history.map((s) => s.gpu?.usage ?? 0),
     },
@@ -53,7 +57,7 @@ export function StatsPage() {
                 <Label icon={m.icon} label={m.label} />
                 {badge && <span className={`badge badge-${badge.tone}`}>{badge.text}</span>}
               </span>
-              <span className="stats-row-value">{m.value == null ? '—' : `${Math.round(m.value)} %`}</span>
+              <span className="stats-row-value">{m.value == null ? '—' : t('units.percent', { value: Math.round(m.value) })}</span>
               {m.detail && <span className="tile-detail">{m.detail}</span>}
             </div>
             <div className="stats-row-chart">
@@ -70,9 +74,9 @@ export function StatsPage() {
           <span className="stats-row-value">{fps ?? '—'}</span>
         </div>
         {/* Place réservée à la courbe des FPS, pas encore mesurés. */}
-        <div className="stats-row-chart stats-row-soon">{fps == null && 'Bientôt disponible'}</div>
+        <div className="stats-row-chart stats-row-soon">{fps == null && t('common.comingSoon')}</div>
       </div>
-      {!connected && <p className="stats-lost">Connexion perdue, reconnexion…</p>}
+      {!connected && <p className="stats-lost">{t('stats.lost')}</p>}
     </div>
   )
 }
@@ -93,16 +97,13 @@ const LOAD: Thresholds = { warning: 70, critical: 90 }
 const RAM: Thresholds = { warning: 80, critical: 90 }
 
 function level(value: number, t: Thresholds): { text: string; tone: Tone } | undefined {
-  if (value >= t.critical) return { text: 'Très élevé', tone: 'critical' }
-  if (value >= t.warning) return { text: 'Élevé', tone: 'warning' }
+  if (value >= t.critical) return { text: i18n.t('common.veryHigh'), tone: 'critical' }
+  if (value >= t.warning) return { text: i18n.t('common.high'), tone: 'warning' }
   return undefined
 }
 
 function gpuDetail(gpu: NonNullable<Stats['gpu']>) {
-  const vram = gpu.memTotal > 0 ? `${gb(gpu.memUsed)} / ${gb(gpu.memTotal)} Go` : `${gb(gpu.memUsed)} Go`
-  return gpu.temp == null ? vram : `${Math.round(gpu.temp)} °C · ${vram}`
-}
-
-function gb(bytes: number) {
-  return (bytes / 1024 ** 3).toFixed(1).replace('.', ',')
+  const GB = i18n.t('units.GB')
+  const vram = gpu.memTotal > 0 ? `${gb(gpu.memUsed)} / ${gb(gpu.memTotal)} ${GB}` : `${gb(gpu.memUsed)} ${GB}`
+  return gpu.temp == null ? vram : `${i18n.t('units.celsius', { value: Math.round(gpu.temp) })} · ${vram}`
 }

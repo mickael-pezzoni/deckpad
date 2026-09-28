@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type Props = {
   value: string
@@ -9,7 +10,9 @@ type Props = {
 
 // Tuile loupe : un appui l'ouvre en champ de recherche, la croix l'efface et la referme.
 // Ouverte vide, elle se replie quand on quitte le champ.
-export function SearchField({ value, onChange, placeholder = 'Rechercher' }: Props) {
+export function SearchField({ value, onChange, placeholder: custom }: Props) {
+  const { t } = useTranslation()
+  const placeholder = custom ?? t('common.search')
   const [open, setOpen] = useState(value !== '')
   const input = useRef<HTMLInputElement>(null)
 
@@ -43,7 +46,7 @@ export function SearchField({ value, onChange, placeholder = 'Rechercher' }: Pro
       <button
         type="button"
         className="search-clear"
-        aria-label="Effacer la recherche"
+        aria-label={t('common.clearSearch')}
         // Garde le focus : sinon le blur replie avant le clic.
         onPointerDown={(e) => e.preventDefault()}
         onClick={() => {
