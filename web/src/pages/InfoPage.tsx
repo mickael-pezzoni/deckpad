@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AppWindow, Cpu, Monitor, Power, User } from 'lucide-react'
 import { Loader } from '../components/Loader'
+import { InfoList } from '../components/InfoList'
 import { usePageActive } from '../layout/pageActive'
 
 type Info = {
@@ -58,19 +59,7 @@ export function InfoPage() {
           {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
         </span>
       </div>
-      <div className="tile info-list">
-        {rows.map(({ icon: Icon, label, value }) => (
-          <div className="info-row" key={label}>
-            <span className="tile-label">
-              <span className="tile-icon">
-                <Icon size={20} strokeWidth={2} aria-hidden />
-              </span>
-              {label}
-            </span>
-            <span className="info-value">{value}</span>
-          </div>
-        ))}
-      </div>
+      <InfoList rows={rows} />
     </div>
   )
 }
