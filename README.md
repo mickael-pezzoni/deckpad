@@ -10,11 +10,28 @@ Piloter son PC depuis une tablette pendant qu'on joue : des pages par thème, en
 1. Lancer `deckpad.exe` sur le PC. Il affiche l'adresse à ouvrir (ex : `http://192.168.1.20:8420`).
 2. Ouvrir cette adresse sur la tablette, puis « Ajouter à l'écran d'accueil ».
 
-Au premier lancement, Windows demande d'autoriser l'accès réseau : accepter pour les réseaux privés.
+### Installer l'appli sur la tablette (PWA)
+
+Les navigateurs n'installent une vraie appli (plein écran, icône, cache) qu'en HTTPS. deckpad sert donc aussi l'appli en HTTPS sur le port 8421, avec son propre certificat.
+
+Juste après l'appairage, la tablette propose de passer en connexion sécurisée, en 3 étapes (une seule fois) :
+
+1. « Télécharger le certificat ».
+2. Android : dans Paramètres, chercher « Certificat CA » et choisir `deckpad-ca.crt`. iPad : Réglages › Profil téléchargé › Installer, puis Réglages › Général › Informations › Réglages des certificats, activer deckpad.
+3. « Continuer en sécurisé » : la tablette passe en HTTPS sans refaire l'appairage. Il ne reste qu'à installer l'appli (menu ⋮ → « Installer l'application » sur Chrome).
+
+À savoir :
+
+- Au premier lancement, deckpad crée sa petite autorité de certification dans `%APPDATA%\deckpad` (Windows) ou `~/.config/deckpad` (Linux) : `ca.crt` et `ca.key`. La clé ne quitte jamais le PC. Elle ne peut signer que des adresses du réseau local, donc elle ne servirait à rien pour se faire passer pour un autre site.
+- Si l'adresse du PC change, le certificat est refait tout seul, sans rien réinstaller sur la tablette.
+- Android affiche ensuite « le réseau peut être surveillé » : c'est normal après l'installation d'un certificat.
+- `-https-addr ""` désactive le HTTPS. En mode développement, le HTTPS sert l'appli construite : lancer `npm run build` avant de tester cette étape.
+
+Sans certificat, sur Android, on peut aussi activer `chrome://flags/#unsafely-treat-insecure-origin-as-secure` avec l'adresse HTTP du PC, puis installer l'appli.
 
 ### Appairer une tablette
 
-La première fois, la tablette affiche un pavé numérique et le PC ouvre une petite fenêtre avec un code à 6 chiffres (aussi écrit dans la console). Taper ce code sur la tablette : elle reçoit une clé et n'aura plus à le refaire.
+Tant qu'aucune tablette n'est appairée, le PC ouvre au lancement une petite fenêtre avec un QR code de l'adresse à ouvrir. La tablette affiche ensuite un pavé numérique et la fenêtre un code à 6 chiffres (aussi écrit dans la console). Taper ce code sur la tablette : elle reçoit une clé et n'aura plus à le refaire.
 
 - Le code expire après 5 minutes et se bloque après 5 erreurs.
 - Chaque appareil a sa propre clé. Le PC n'en garde que l'empreinte, dans `%APPDATA%\deckpad\devices.json` (Windows) ou `~/.config/deckpad/devices.json` (Linux). Supprimer ce fichier désappaire tout.

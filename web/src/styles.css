@@ -2074,3 +2074,147 @@ body,
     max-width: 200px;
   }
 }
+
+/* Passage en HTTPS après l'appairage : 3 étapes illustrées et 2 boutons. */
+.secure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 4vh, 40px);
+  height: 100%;
+  overflow: hidden;
+  padding: 24px 32px;
+}
+
+.secure .pairing-intro {
+  max-width: 560px;
+  gap: 14px;
+}
+
+.secure-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 220px));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.secure-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 18px;
+  border-radius: var(--radius);
+  background: var(--tile);
+  text-align: center;
+}
+
+.secure-step strong {
+  font-size: 18px;
+}
+
+.secure-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.secure-step-num {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.secure-step-icon {
+  color: var(--accent);
+}
+
+.secure-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.secure-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.secure-later {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 16px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+@media (orientation: portrait) {
+  .secure-steps {
+    grid-template-columns: minmax(0, 420px);
+    gap: 12px;
+  }
+  .secure-step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 16px;
+    row-gap: 2px;
+    padding: 14px 18px 14px 40px;
+    text-align: left;
+  }
+  .secure-step-icon {
+    grid-row: span 2;
+    align-self: center;
+  }
+  .secure-step-num {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .secure-actions {
+    flex-direction: column;
+    width: min(100%, 420px);
+  }
+}
+
+/* Téléphone : on resserre pour que tout tienne sans défiler. */
+@media (max-width: 500px) {
+  .secure {
+    gap: 14px;
+    padding: 16px;
+  }
+  .secure .pairing-icon {
+    display: none;
+  }
+  .secure h1 {
+    font-size: 24px;
+  }
+  .secure .pairing-message {
+    font-size: 16px;
+  }
+  .secure-step {
+    padding: 10px 14px 10px 36px;
+  }
+  .secure-step p {
+    font-size: 14px;
+  }
+  .secure-actions {
+    gap: 10px;
+  }
+  .secure-btn {
+    min-height: 60px;
+    font-size: 16px;
+  }
+}

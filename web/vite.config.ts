@@ -19,6 +19,9 @@ export default defineConfig({
   server: {
     host: true, // accessible depuis la tablette sur le réseau local
     // xfwd : l'agent voit que la requête vient de la tablette, pas du PC (voir localOnly).
-    proxy: { '/api': { target: 'http://localhost:8420', xfwd: true } },
+    proxy: {
+      '/api': { target: 'http://localhost:8420', xfwd: true },
+      '/ca': { target: 'http://localhost:8420', xfwd: true }, // certificat HTTPS à installer
+    },
   },
 })

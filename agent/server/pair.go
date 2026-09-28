@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
@@ -72,14 +73,7 @@ func handlePairConfirm(store *auth.Store) http.HandlerFunc {
 			return
 		}
 		log.Printf("appairage : %q ajouté", name)
-		http.SetCookie(w, &http.Cookie{
-			Name:     tokenCookie,
-			Value:    token,
-			Path:     "/",
-			MaxAge:   10 * 365 * 24 * 3600, // l'appareil reste appairé jusqu'à révocation
-			HttpOnly: true,                 // illisible par le JavaScript de la page
-			SameSite: http.SameSiteStrictMode,
-		})
+		setToken(w, r, token)
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -102,9 +96,19 @@ func pairError(w http.ResponseWriter, err error, remaining int) {
 	json.NewEncoder(w).Encode(body)
 }
 
+// windowPoll : dernière fois (UnixNano) que la fenêtre d'appairage a demandé le code.
+var windowPoll atomic.Int64
+
+// PairWindowOpen indique qu'une fenêtre d'appairage est déjà ouverte sur le PC
+// (elle interroge le code chaque seconde) : inutile d'en ouvrir une deuxième.
+func PairWindowOpen() bool {
+	return time.Since(time.Unix(0, windowPoll.Load())) < 3*time.Second
+}
+
 // Le code et sa fenêtre ne sont servis qu'au PC lui-même.
 func handlePairCode(store *auth.Store) http.HandlerFunc {
 	return localOnly(func(w http.ResponseWriter, r *http.Request) {
+		windowPoll.Store(time.Now().UnixNano())
 		w.Header().Set("Cache-Control", "no-store")
 		writeJSON(w, store.Code())
 	})

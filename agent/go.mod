@@ -5,6 +5,7 @@ go 1.24.7
 require (
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/shirou/gopsutil/v4 v4.26.8
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/sys v0.41.0
 )
 

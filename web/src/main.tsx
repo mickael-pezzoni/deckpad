@@ -6,6 +6,12 @@ import { installClickSound } from './feedback/clickSound'
 
 installClickSound()
 
+// Le service worker n'est accepté qu'en contexte sécurisé (HTTPS ou localhost) :
+// en HTTP simple sur le réseau local, navigator.serviceWorker n'existe pas et on s'en passe.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {})
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

@@ -19,6 +19,8 @@
   .bar div { height: 100%; background: #4f8cff; transition: width 1s linear; }
   p { margin: 0; color: #8a93a3; font-size: 15px; }
   .big { font-size: 56px; line-height: 1; }
+  .qr { width: 240px; height: 240px; border-radius: 16px; background: #fff; padding: 12px; box-sizing: border-box; image-rendering: pixelated; }
+  .url { font-size: 17px; color: #f2f4f8; font-variant-numeric: tabular-nums; }
   .ok { color: #5cc98a; }
   .warn { color: #f2d49b; }
 </style>
@@ -30,7 +32,14 @@
   const body = document.body
   let closing = false
 
-  function show(html) { body.innerHTML = html }
+  let shown = ''
+  // Ne réécrit la page que si elle change (évite de recharger le QR code chaque seconde).
+  function show(html) {
+    if (html !== shown) body.innerHTML = shown = html
+  }
+
+  let url = null
+  fetch('/pair-url', { cache: 'no-store' }).then((r) => r.json()).then((j) => { url = j.url }).catch(() => {})
 
   function closeSoon(ms) {
     if (closing) return
@@ -63,9 +72,16 @@
       closeSoon(2500)
     } else if (s.state === 'locked') {
       show('<div class="big warn">!</div><h1>Trop d\'essais</h1><p>Recommence depuis la tablette dans quelques minutes.</p>')
-    } else {
+    } else if (s.state === 'expired') {
       show('<h1>Code expiré</h1><p>Recommence depuis la tablette.</p>')
       closeSoon(4000)
+    } else if (url) {
+      // Aucun appairage en cours : l'adresse à ouvrir sur la tablette.
+      show(`<h1>Scanne avec la tablette</h1>
+        <img class="qr" src="/pair-qr" alt="">
+        <p>ou ouvre <span class="url">${url}</span></p>`)
+    } else {
+      show('<h1>Ouvre deckpad sur la tablette</h1><p>L\'adresse est écrite dans la console.</p>')
     }
   }
 

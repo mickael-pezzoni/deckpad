@@ -167,6 +167,13 @@ func (s *Store) Confirm(code, deviceName string) (token string, remaining int, e
 	return token, 0, nil
 }
 
+// Empty indique qu'aucun appareil n'est encore appairé.
+func (s *Store) Empty() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.devices) == 0
+}
+
 // Valid indique si la clé appartient à un appareil appairé.
 func (s *Store) Valid(token string) bool {
 	if token == "" {

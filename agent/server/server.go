@@ -26,16 +26,23 @@ import (
 )
 
 // New construit le routeur : /api/* pour les données, tout le reste pour l'appli.
-// Seuls les appareils appairés dans store accèdent à l'API.
-func New(store *auth.Store, keys *shortcuts.Store) http.Handler {
+// Seuls les appareils appairés dans store accèdent à l'API. sec peut être nil (pas de HTTPS).
+func New(store *auth.Store, keys *shortcuts.Store, sec *Secure) http.Handler {
 	procs := process.NewLister()
+	handoff := &handoffs{codes: map[string]handoff{}}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/pair/status", handlePairStatus(store))
 	mux.HandleFunc("POST /api/pair/start", handlePairStart(store))
 	mux.HandleFunc("POST /api/pair/confirm", handlePairConfirm(store))
 	mux.HandleFunc("GET /api/pair/code", handlePairCode(store))
+	mux.HandleFunc("GET /api/pair/secure", handleSecureInfo(sec))
+	mux.HandleFunc("POST /api/pair/handoff", handleHandoff(store, handoff))
+	mux.HandleFunc("POST /api/pair/claim", handleClaim(store, handoff))
+	mux.HandleFunc("GET /ca", handleCA(sec))
 	mux.HandleFunc("GET /pair-code", localOnly(handlePairWindow))
+	mux.HandleFunc("GET /pair-qr", handlePairQR(sec))
+	mux.HandleFunc("GET /pair-url", handlePairURL(sec))
 	mux.HandleFunc("GET /api/info", handleInfo)
 	mux.Handle("GET /api/stats/stream", stream(live.NewHub(time.Second, stats.Collect)))
 	mux.Handle("GET /api/processes/stream", stream(live.NewHub(2*time.Second, procs.Apps)))
@@ -390,7 +397,18 @@ func appHandler() http.Handler {
 			http.Error(w, "Appli web absente : lancez d'abord le build (voir README).", http.StatusNotFound)
 		})
 	}
-	return http.FileServerFS(dist)
+	files := http.FileServerFS(dist)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manifest.webmanifest":
+			// Type absent de la table de Go (et du registre Windows) : on le donne nous-mêmes.
+			w.Header().Set("Content-Type", "application/manifest+json")
+		case "/sw.js", "/", "/index.html":
+			// Toujours revalider : une nouvelle version de l'exe doit arriver sur la tablette.
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+		files.ServeHTTP(w, r)
+	})
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
