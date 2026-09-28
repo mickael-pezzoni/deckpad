@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './i18n' // avant App : les textes sont prêts dès le premier rendu
 import App from './App'
 import './styles.css'
 import { installClickSound } from './feedback/clickSound'

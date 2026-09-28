@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Headphones, Mic, MicOff, MonitorSpeaker, Speaker, Volume2, type LucideIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { VolumeFader } from '../components/VolumeFader'
 import { AppIcon } from '../components/AppIcon'
 import { SideScroll } from '../components/SideScroll'
@@ -20,6 +21,7 @@ type AudioState = {
 }
 
 export function AudioPage() {
+  const { t } = useTranslation()
   const [state, setState] = useState<AudioState | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const connected = useEventStream<AudioState>('/api/audio/stream', setState)
@@ -41,26 +43,26 @@ export function AudioPage() {
     if (!r?.ok) setNotice(failure)
   }
 
-  const setVolume = (target: string, volume: number) => post('volume', { target, volume }, 'Volume non modifié')
+  const setVolume = (target: string, volume: number) => post('volume', { target, volume }, t('audio.volumeFailed'))
   const setMute = (target: string, muted: boolean) =>
-    post('mute', { target, muted }, muted ? 'Son non coupé' : 'Son non rétabli')
+    post('mute', { target, muted }, t(muted ? 'audio.muteFailed' : 'audio.unmuteFailed'))
 
-  if (!state) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
-  if (state.unavailable) return <p className="coming-soon files-empty">Son indisponible : {state.unavailable}</p>
+  if (!state) return <Loader label={connected ? undefined : t('common.connecting')} />
+  if (state.unavailable) return <p className="coming-soon files-empty">{t('audio.unavailable', { reason: state.unavailable })}</p>
 
   return (
     <>
       <div className="audio-bar">
         <Outputs
           outputs={state.outputs}
-          onSelect={(d) => post('output', { id: d.id }, `Impossible de passer sur ${d.name}`)}
+          onSelect={(d) => post('output', { id: d.id }, t('audio.switchFailed', { name: d.name }))}
         />
         <MicButton mic={state.mic} onMute={(m) => setMute('mic', m)} />
       </div>
       <SideScroll className="mixer">
         {state.master ? (
           <VolumeFader
-            label="Général"
+            label={t('audio.master')}
             icon={<Volume2 size={20} strokeWidth={2} aria-hidden />}
             volume={state.master.volume}
             muted={masterMuted}
@@ -71,7 +73,7 @@ export function AudioPage() {
             }}
           />
         ) : (
-          <p className="mixer-empty">Aucune sortie audio</p>
+          <p className="mixer-empty">{t('audio.noOutput')}</p>
         )}
         {state.apps.map((a) => (
           <VolumeFader
@@ -86,7 +88,7 @@ export function AudioPage() {
             onMute={(m) => setMute(`app:${a.id}`, m)}
           />
         ))}
-        {state.master && state.apps.length === 0 && <p className="mixer-empty">Aucune appli ne joue de son</p>}
+        {state.master && state.apps.length === 0 && <p className="mixer-empty">{t('audio.noApp')}</p>}
       </SideScroll>
       {notice && createPortal(<div className="toast">{notice}</div>, document.body)}
     </>
@@ -95,11 +97,12 @@ export function AudioPage() {
 
 // Choix de la sortie : la sortie cochée est celle qui joue le son.
 function Outputs({ outputs, onSelect }: { outputs: Device[]; onSelect: (d: Device) => void }) {
+  const { t } = useTranslation()
   const current = outputs.find((d) => d.default)?.id ?? ''
   const [selected, select] = useLatched(current, 3000)
   if (outputs.length === 0) return <div className="audio-outputs" />
   return (
-    <div className="segmented audio-outputs" role="radiogroup" aria-label="Sortie audio">
+    <div className="segmented audio-outputs" role="radiogroup" aria-label={t('audio.output')}>
       {outputs.map((d) => {
         const Icon = deviceIcon(d.name)
         return (
@@ -125,12 +128,13 @@ function Outputs({ outputs, onSelect }: { outputs: Device[]; onSelect: (d: Devic
 }
 
 function MicButton({ mic, onMute }: { mic: Level | null; onMute: (muted: boolean) => void }) {
+  const { t } = useTranslation()
   const [muted, latch] = useLatched(mic?.muted ?? false)
   if (!mic) {
     return (
       <button type="button" className="audio-mic" disabled>
         <MicOff size={26} strokeWidth={2} aria-hidden />
-        Aucun micro
+        {t('audio.noMic')}
       </button>
     )
   }
@@ -146,7 +150,7 @@ function MicButton({ mic, onMute }: { mic: Level | null; onMute: (muted: boolean
       }}
     >
       <Icon size={26} strokeWidth={2} aria-hidden />
-      {muted ? 'Micro coupé' : 'Micro actif'}
+      {muted ? t('audio.micMuted') : t('audio.micOn')}
     </button>
   )
 }

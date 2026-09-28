@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowLeft, File, Folder, HardDrive, Usb } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Tile } from '../components/Tile'
 import { Loader } from '../components/Loader'
 import { UsageBar } from '../components/UsageBar'
@@ -15,6 +16,7 @@ type Listing = { path: string; parent: string; entries: Entry[]; truncated: numb
 const FULL = 90
 
 export function FilesPage() {
+  const { t } = useTranslation()
   const active = usePageActive()
   const [drives, setDrives] = useState<Drive[] | null>(null)
   const [drivesError, setDrivesError] = useState(false)
@@ -42,9 +44,9 @@ export function FilesPage() {
       setListing(data)
       return
     }
-    setNotice(r?.status === 403 ? 'Accès refusé à ce dossier' : r?.status === 404 ? 'Dossier introuvable' : 'PC injoignable')
+    setNotice(t(r?.status === 403 ? 'files.denied' : r?.status === 404 ? 'files.notFound' : 'common.unreachable'))
     onFail?.()
-  }, [])
+  }, [t])
 
   // Liste des disques rechargée à chaque retour sur la page (clé USB branchée entre-temps).
   useEffect(() => {
@@ -85,8 +87,8 @@ export function FilesPage() {
   const toast = notice && createPortal(<div className="toast">{notice}</div>, document.body)
 
   if (!drive) {
-    if (!drives) return drivesError ? <p className="coming-soon">PC injoignable</p> : <Loader />
-    if (drives.length === 0) return <p className="coming-soon">Aucun disque trouvé</p>
+    if (!drives) return drivesError ? <p className="coming-soon">{t('common.unreachable')}</p> : <Loader />
+    if (drives.length === 0) return <p className="coming-soon">{t('files.noDrive')}</p>
     return (
       <>
         <div className="grid grid-drives">
@@ -98,9 +100,9 @@ export function FilesPage() {
                 key={d.path}
                 label={driveLabel(d.path)}
                 icon={d.removable ? Usb : HardDrive}
-                detail={`${formatBytes(d.total - d.used)} libres sur ${formatBytes(d.total)}`}
+                detail={t('files.free', { free: formatBytes(d.total - d.used), total: formatBytes(d.total) })}
                 chart={<UsageBar percent={pct} critical={full} />}
-                badge={full ? { text: 'Presque plein', tone: 'critical' } : undefined}
+                badge={full ? { text: t('files.almostFull'), tone: 'critical' } : undefined}
                 onClick={() => openDrive(d)}
               >
                 {d.name}
@@ -116,7 +118,7 @@ export function FilesPage() {
   return (
     <>
       <div className="files-bar">
-        <button type="button" className="files-back" onClick={back} aria-label="Retour">
+        <button type="button" className="files-back" onClick={back} aria-label={t('common.back')}>
           <ArrowLeft size={28} aria-hidden />
         </button>
         <span className="files-path">{breadcrumb(drive, listing?.path ?? drive.path)}</span>
@@ -124,22 +126,22 @@ export function FilesPage() {
       {loading && !listing ? (
         <Loader />
       ) : listing && listing.entries.length === 0 ? (
-        <p className="coming-soon files-empty">Dossier vide</p>
+        <p className="coming-soon files-empty">{t('files.empty')}</p>
       ) : (
         <div className={loading ? 'grid grid-files is-loading' : 'grid grid-files'}>
           {listing?.entries.map((e) =>
             e.dir ? (
-              <Tile key={e.name} label="Dossier" icon={Folder} onClick={() => open(join(listing.path, e.name))}>
+              <Tile key={e.name} label={t('files.folder')} icon={Folder} onClick={() => open(join(listing.path, e.name))}>
                 {e.name}
               </Tile>
             ) : (
-              <Tile key={e.name} label="Fichier" icon={File} detail={formatBytes(e.size)}>
+              <Tile key={e.name} label={t('files.file')} icon={File} detail={formatBytes(e.size)}>
                 {e.name}
               </Tile>
             ),
           )}
           {listing && listing.truncated > 0 && (
-            <p className="files-more">+ {listing.truncated} éléments non affichés</p>
+            <p className="files-more">{t('files.more', { n: listing.truncated })}</p>
           )}
         </div>
       )}

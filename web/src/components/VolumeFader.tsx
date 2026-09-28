@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useLatched } from '../hooks/useLatched'
 
 type Props = {
@@ -19,6 +20,7 @@ const SEND_MS = 80
 // Curseur de volume vertical façon table de mixage : on glisse ou on tape sur la
 // piste. Glisser verticalement ne change pas de page (swiper-no-swiping).
 export function VolumeFader({ label, icon, appIcon, volume, muted, silenced, onVolume, onMute }: Props) {
+  const { t } = useTranslation()
   const [shownVolume, latchVolume] = useLatched(volume)
   const [shownMuted, latchMuted] = useLatched(muted)
   const [drag, setDrag] = useState<number | null>(null)
@@ -79,12 +81,12 @@ export function VolumeFader({ label, icon, appIcon, volume, muted, silenced, onV
         <span className={appIcon ? 'tile-icon tile-icon-image' : 'tile-icon'}>{icon}</span>
         <span className="fader-label">{label}</span>
       </span>
-      <span className="fader-value">{value} %</span>
+      <span className="fader-value">{t('units.percent', { value })}</span>
       <div
         ref={track}
         className="fader-track swiper-no-swiping"
         role="slider"
-        aria-label={`Volume ${label}`}
+        aria-label={t('audio.volumeOf', { name: label })}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={value}
@@ -98,7 +100,7 @@ export function VolumeFader({ label, icon, appIcon, volume, muted, silenced, onV
       <button
         type="button"
         className="fader-mute"
-        aria-label={shownMuted ? `Rétablir le son : ${label}` : `Couper le son : ${label}`}
+        aria-label={t(shownMuted ? 'audio.unmuteOf' : 'audio.muteOf', { name: label })}
         aria-pressed={shownMuted}
         onClick={toggleMute}
       >

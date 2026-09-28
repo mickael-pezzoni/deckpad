@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Loader } from '../components/Loader'
 import { ShortcutTile } from '../components/ShortcutTile'
 import { ShortcutEditor } from '../components/ShortcutEditor'
@@ -15,6 +16,7 @@ const MIN_H = 150
 const GAP = 24
 
 export function ShortcutsPage() {
+  const { t } = useTranslation()
   const active = usePageActive()
   const [state, setState] = useState<ShortcutsState | null>(null)
   const [failed, setFailed] = useState(false)
@@ -46,8 +48,8 @@ export function ShortcutsPage() {
     const reason = state && unavailable(s, state)
     if (reason) return setNotice(reason)
     const r = await fetch(`/api/shortcuts/${encodeURIComponent(s.id)}/run`, { method: 'POST' }).catch(() => null)
-    if (!r?.ok) setNotice(r ? `${s.label} : ${(await r.text()).trim()}` : 'PC injoignable')
-    else if (s.kind === 'capture') setNotice('Capture copiée dans le presse-papiers')
+    if (!r?.ok) setNotice(r ? `${s.label} : ${(await r.text()).trim()}` : t('common.unreachable'))
+    else if (s.kind === 'capture') setNotice(t('shortcuts.captured'))
   }
 
   // Enregistre toute la liste sur le PC ; renvoie un message d'erreur.
@@ -57,14 +59,14 @@ export function ShortcutsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(list),
     }).catch(() => null)
-    if (!r) return 'PC injoignable'
+    if (!r) return t('common.unreachable')
     if (!r.ok) return (await r.text()).trim()
     setState(await r.json())
     setEditing(null)
     return null
-  }, [])
+  }, [t])
 
-  if (!state) return failed ? <p className="coming-soon">PC injoignable</p> : <Loader />
+  if (!state) return failed ? <p className="coming-soon">{t('common.unreachable')}</p> : <Loader />
 
   const list = state.shortcuts
   const saveOne = (s: Shortcut) =>
@@ -104,8 +106,8 @@ export function ShortcutsPage() {
             <span className="shortcut-icon">
               <Plus size={36} strokeWidth={1.75} aria-hidden />
             </span>
-            <span className="shortcut-label">Ajouter</span>
-            <span className="shortcut-detail">Appui long sur une tuile pour la modifier</span>
+            <span className="shortcut-label">{t('shortcuts.add')}</span>
+            <span className="shortcut-detail">{t('shortcuts.addHint')}</span>
           </button>
         )}
       </div>
@@ -117,7 +119,7 @@ export function ShortcutsPage() {
               type="button"
               className={i === current ? 'active' : ''}
               onClick={() => setPage(i)}
-              aria-label={`Page ${i + 1}`}
+              aria-label={t('common.pageN', { n: i + 1 })}
             >
               <span />
             </button>

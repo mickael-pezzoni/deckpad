@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next'
+
 // Chargement d'une page : une mini grille de tuiles qui s'allument en vague
 // diagonale (clin d'œil aux tuiles de l'app), centrée sur la page.
-export function Loader({ label = 'Chargement…' }: { label?: string }) {
+export function Loader({ label }: { label?: string }) {
+  const { t } = useTranslation()
   return (
     <div className="loader" role="status">
       <div className="loader-grid" aria-hidden>
@@ -8,7 +11,7 @@ export function Loader({ label = 'Chargement…' }: { label?: string }) {
           <span key={i} style={{ '--d': (i % 3) + Math.floor(i / 3) } as React.CSSProperties} />
         ))}
       </div>
-      <p className="loader-label">{label}</p>
+      <p className="loader-label">{label ?? t('common.loading')}</p>
     </div>
   )
 }

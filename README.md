@@ -16,6 +16,7 @@ Piloter son PC depuis une tablette pendant qu'on joue : des pages par thème, en
 | ![Médias](docs/screenshots/medias.png) Médias | ![Raccourcis](docs/screenshots/raccourcis.png) Raccourcis |
 | ![Fichiers](docs/screenshots/fichiers.png) Fichiers | ![Presse-papiers](docs/screenshots/presse-papiers.png) Presse-papiers |
 | ![Système](docs/screenshots/systeme.png) Système | ![Thème clair](docs/screenshots/infos-clair.png) Thème clair |
+| ![Paramètres](docs/screenshots/parametres.png) Paramètres | ![En anglais](docs/screenshots/processus-anglais.png) En anglais |
 
 Sur téléphone aussi :
 
@@ -78,6 +79,8 @@ cd web && npm install && npm run dev
 
 Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recharge à chaque sauvegarde et les appels `/api` sont redirigés vers l'agent.
 
+Textes de l'appli : `web/src/i18n/fr.ts` et `web/src/i18n/en.ts` (react-i18next). Un texte ajouté en français doit l'être aussi en anglais : la compilation échoue sinon.
+
 ## Pages
 
 | Page | État |
@@ -92,4 +95,4 @@ Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recha
 | Raccourcis | ✅ tuiles configurables depuis la tablette (appui long pour modifier) : combinaison de touches, programme, dossier ou adresse web, capture de l'écran copiée dans le presse-papiers. Enregistrés dans `%APPDATA%\deckpad\shortcuts.json` (Windows) ou `~/.config/deckpad/shortcuts.json` (Linux). Sous Linux, les touches demandent `xdotool` (X11) ou `ydotool` (Wayland), la capture `gnome-screenshot`, `spectacle`, `grim` + `wl-copy` ou `maim` + `xclip` |
 | Presse-papiers | ✅ envoyer un texte au PC (copier, ouvrir, taper), voir le presse-papiers du PC, historique |
 | Système | ✅ verrouiller, veille, redémarrer, éteindre (appui long) |
-| Paramètres | à venir |
+| Paramètres | ✅ langue (français / anglais, celle du navigateur au premier lancement) et page affichée au lancement, mémorisées sur la tablette |

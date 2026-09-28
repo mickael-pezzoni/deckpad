@@ -1,38 +1,18 @@
 import { useState } from 'react'
-import { Download, Lock, Settings, ShieldCheck } from 'lucide-react'
+import { Download, Lock, Settings, ShieldCheck, type LucideIcon } from 'lucide-react'
+import type { ParseKeys } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import { goSecure, later, secureReachable } from './secure'
 
 const isApple = /iPad|iPhone|Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1
 
 // Étapes illustrées pour installer le certificat, selon la tablette.
-const steps = [
-  {
-    Icon: Download,
-    title: 'Télécharger',
-    text: 'Touche «\u00a0Télécharger le certificat\u00a0» ci-dessous.',
-  },
+const steps: { Icon: LucideIcon; title: ParseKeys; text: ParseKeys }[] = [
+  { Icon: Download, title: 'secure.download', text: 'secure.downloadText' },
+  { Icon: Settings, title: 'secure.install', text: isApple ? 'secure.installApple' : 'secure.installAndroid' },
   isApple
-    ? {
-        Icon: Settings,
-        title: 'Installer',
-        text: 'Réglages › Profil téléchargé › Installer.',
-      }
-    : {
-        Icon: Settings,
-        title: 'Installer',
-        text: 'Dans Paramètres, cherche «\u00a0Certificat CA\u00a0» et choisis deckpad-ca.crt.',
-      },
-  isApple
-    ? {
-        Icon: ShieldCheck,
-        title: 'Autoriser',
-        text: 'Réglages › Général › Informations › Réglages des certificats : active deckpad.',
-      }
-    : {
-        Icon: ShieldCheck,
-        title: 'Revenir',
-        text: 'Reviens ici et touche «\u00a0Continuer en sécurisé\u00a0».',
-      },
+    ? { Icon: ShieldCheck, title: 'secure.allow', text: 'secure.allowApple' }
+    : { Icon: ShieldCheck, title: 'secure.comeBack', text: 'secure.comeBackText' },
 ]
 
 type Status = { kind: 'idle' } | { kind: 'checking' } | { kind: 'failed' }
@@ -40,6 +20,7 @@ type Status = { kind: 'idle' } | { kind: 'checking' } | { kind: 'failed' }
 // Après l'appairage : installer le certificat de deckpad pour passer en HTTPS,
 // ce qui permet d'installer l'appli en plein écran.
 export function SecureSetup({ port, onSkip }: { port: string; onSkip: () => void }) {
+  const { t } = useTranslation()
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
   const proceed = async () => {
@@ -53,18 +34,15 @@ export function SecureSetup({ port, onSkip }: { port: string; onSkip: () => void
     onSkip()
   }
 
-  let message = "Une étape, une seule fois : elle permet d'installer deckpad en plein écran."
-  if (status.kind === 'checking') message = 'Vérification…'
-  if (status.kind === 'failed')
-    message = isApple
-      ? "Le certificat n'est pas encore reconnu. Vérifie qu'il est installé et activé dans Réglages des certificats."
-      : "Le certificat n'est pas encore reconnu. Vérifie qu'il est installé comme «\u00a0Certificat CA\u00a0», puis réessaie."
+  let message = t('secure.intro')
+  if (status.kind === 'checking') message = t('pairing.checking')
+  if (status.kind === 'failed') message = t(isApple ? 'secure.failedApple' : 'secure.failedAndroid')
 
   return (
     <main className="secure">
       <div className="pairing-intro">
         <Lock size={40} strokeWidth={1.75} aria-hidden className="pairing-icon" />
-        <h1>Passer en connexion sécurisée</h1>
+        <h1>{t('secure.title')}</h1>
         <p className={`pairing-message${status.kind === 'failed' ? ' is-error' : ''}`} role="status">
           {message}
         </p>
@@ -74,23 +52,23 @@ export function SecureSetup({ port, onSkip }: { port: string; onSkip: () => void
           <li key={title} className="secure-step">
             <span className="secure-step-num">{i + 1}</span>
             <Icon size={32} strokeWidth={1.75} aria-hidden className="secure-step-icon" />
-            <strong>{title}</strong>
-            <p>{text}</p>
+            <strong>{t(title)}</strong>
+            <p>{t(text)}</p>
           </li>
         ))}
       </ol>
       <div className="secure-actions">
         <a className="btn secure-btn" href="/ca" download="deckpad-ca.crt">
           <Download size={24} strokeWidth={1.75} aria-hidden />
-          Télécharger le certificat
+          {t('secure.downloadCert')}
         </a>
         <button type="button" className="btn btn-primary secure-btn" onClick={proceed} disabled={status.kind === 'checking'}>
           <Lock size={24} strokeWidth={1.75} aria-hidden />
-          Continuer en sécurisé
+          {t('secure.proceed')}
         </button>
       </div>
       <button type="button" className="secure-later" onClick={skip}>
-        Plus tard
+        {t('secure.later')}
       </button>
     </main>
   )

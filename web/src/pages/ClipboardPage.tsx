@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ClipboardCopy, Copy, Download, Monitor, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Loader } from '../components/Loader'
 import { SideScroll } from '../components/SideScroll'
 import { ACTION_ICONS, HistoryChip } from '../components/HistoryChip'
@@ -15,19 +16,20 @@ type ClipboardState = {
   unavailable?: string
 }
 
-const SENT: Record<SendAction, string> = {
-  copy: 'Copié sur le PC',
-  open: 'Ouvert sur le PC',
-  type: 'Tapé sur le PC',
-}
+const SENT = {
+  copy: 'clipboard.sentCopy',
+  open: 'clipboard.sentOpen',
+  type: 'clipboard.sentType',
+} as const satisfies Record<SendAction, string>
 
-const SEND_BUTTONS: { action: SendAction; label: string }[] = [
-  { action: 'copy', label: 'Copier sur le PC' },
-  { action: 'open', label: 'Ouvrir sur le PC' },
-  { action: 'type', label: 'Taper sur le PC' },
-]
+const SEND_BUTTONS = [
+  { action: 'copy', label: 'clipboard.copy' },
+  { action: 'open', label: 'clipboard.open' },
+  { action: 'type', label: 'clipboard.type' },
+] as const satisfies readonly { action: SendAction; label: string }[]
 
 export function ClipboardPage() {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState('')
   const [history, setHistory] = useState(loadHistory)
   const [pc, setPC] = useState<ClipboardState | null>(null)
@@ -41,22 +43,22 @@ export function ClipboardPage() {
   }, [notice])
 
   async function send(action: SendAction, text: string) {
-    if (!text.trim()) return setNotice('Écris ou colle un texte d’abord')
-    if (action === 'open' && !looksLikeURL(text)) return setNotice('Ce n’est pas une adresse web')
+    if (!text.trim()) return setNotice(t('clipboard.needText'))
+    if (action === 'open' && !looksLikeURL(text)) return setNotice(t('clipboard.notURL'))
     const r = await fetch('/api/clipboard/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, text }),
     }).catch(() => null)
-    if (!r) return setNotice('PC injoignable')
+    if (!r) return setNotice(t('common.unreachable'))
     if (!r.ok) return setNotice((await r.text()).trim())
-    setNotice(SENT[action])
+    setNotice(t(SENT[action]))
     setHistory((h) => pushHistory(h, action, text))
   }
 
   async function copyFromPC() {
     if (!pc?.text) return
-    setNotice((await copyToDevice(pc.text)) ? 'Copié sur la tablette' : 'Copie refusée par le navigateur')
+    setNotice((await copyToDevice(pc.text)) ? t('clipboard.copiedHere') : t('clipboard.copyRefused'))
   }
 
   const isURL = looksLikeURL(draft)
@@ -69,11 +71,11 @@ export function ClipboardPage() {
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Écris ou colle un texte, un lien…"
+              placeholder={t('clipboard.placeholder')}
               spellCheck={false}
             />
             {draft && (
-              <button type="button" className="clip-clear" aria-label="Effacer" onClick={() => setDraft('')}>
+              <button type="button" className="clip-clear" aria-label={t('common.clear')} onClick={() => setDraft('')}>
                 <X size={22} strokeWidth={2} aria-hidden />
               </button>
             )}
@@ -90,7 +92,7 @@ export function ClipboardPage() {
                   onClick={() => send(action, draft)}
                 >
                   <Icon size={30} strokeWidth={1.75} aria-hidden />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </button>
               )
             })}
@@ -100,13 +102,13 @@ export function ClipboardPage() {
         <div className="clip-pc">
           <span className="clip-pc-head">
             <Monitor size={20} strokeWidth={2} aria-hidden />
-            Presse-papiers du PC
+            {t('clipboard.pcClipboard')}
           </span>
           <PCContent state={pc} connected={connected} />
           {pc?.image ? (
             <a className="clip-action clip-pc-btn" href={`/api/clipboard/image?v=${pc.image}&download`} download>
               <Download size={26} strokeWidth={1.75} aria-hidden />
-              <span>Enregistrer l’image</span>
+              <span>{t('clipboard.saveImage')}</span>
             </a>
           ) : (
             <button
@@ -116,7 +118,7 @@ export function ClipboardPage() {
               disabled={!pc?.text}
             >
               <Copy size={26} strokeWidth={1.75} aria-hidden />
-              <span>Copier sur la tablette</span>
+              <span>{t('clipboard.copyHere')}</span>
             </button>
           )}
         </div>
@@ -131,7 +133,7 @@ export function ClipboardPage() {
               onSend={() => send(h.action, h.text)}
               onRemove={() => {
                 setHistory((list) => removeHistory(list, h.id))
-                setNotice('Retiré de l’historique')
+                setNotice(t('clipboard.removed'))
               }}
             />
           ))}
@@ -145,12 +147,13 @@ export function ClipboardPage() {
 
 // Ce que contient le presse-papiers du PC : texte, image ou rien.
 function PCContent({ state, connected }: { state: ClipboardState | null; connected: boolean }) {
-  if (!state) return <Loader label={connected ? 'Chargement…' : 'Connexion au PC…'} />
-  if (state.unavailable) return <p className="clip-pc-empty">Indisponible : {state.unavailable}</p>
+  const { t } = useTranslation()
+  if (!state) return <Loader label={connected ? undefined : t('common.connecting')} />
+  if (state.unavailable) return <p className="clip-pc-empty">{t('clipboard.unavailable', { reason: state.unavailable })}</p>
   if (state.image) {
     return (
       <div className="clip-pc-image">
-        <img src={`/api/clipboard/image?v=${state.image}`} alt="Image copiée sur le PC" />
+        <img src={`/api/clipboard/image?v=${state.image}`} alt={t('clipboard.imageAlt')} />
       </div>
     )
   }
@@ -158,14 +161,14 @@ function PCContent({ state, connected }: { state: ClipboardState | null; connect
     return (
       <div className="clip-pc-text">
         {state.text}
-        {state.truncated && <span className="clip-pc-more">… (texte trop long, début seulement)</span>}
+        {state.truncated && <span className="clip-pc-more">{t('clipboard.truncated')}</span>}
       </div>
     )
   }
   return (
     <div className="clip-pc-empty">
       <ClipboardCopy size={48} strokeWidth={1.5} aria-hidden />
-      <p>Rien de copié sur le PC</p>
+      <p>{t('clipboard.empty')}</p>
     </div>
   )
 }
