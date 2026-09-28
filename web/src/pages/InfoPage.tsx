@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppWindow, CalendarDays, Clock, Cpu, Monitor, Power, User } from 'lucide-react'
-import { Tile } from '../components/Tile'
+import { AppWindow, Cpu, Monitor, Power, User } from 'lucide-react'
 import { Loader } from '../components/Loader'
 import { usePageActive } from '../layout/pageActive'
 
@@ -42,19 +41,36 @@ export function InfoPage() {
   // La durée avance avec l'horloge, entre deux rechargements.
   const uptime = info.uptimeSec + Math.max(0, (now.getTime() - new Date(info.now).getTime()) / 1000)
 
+  const rows = [
+    { icon: User, label: 'Utilisateur', value: shortUser(info.username) },
+    { icon: Monitor, label: 'Nom du PC', value: info.hostname },
+    { icon: AppWindow, label: 'Système', value: info.os },
+    { icon: Power, label: 'Allumé depuis', value: formatUptime(uptime) },
+    { icon: Cpu, label: 'Processeur', value: shortCPU(info.cpu) },
+  ]
+
+  // Grande horloge + fiche du PC en liste.
   return (
-    <div className="grid">
-      <Tile label="Heure" icon={Clock} wide>
-        {now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-      </Tile>
-      <Tile label="Date" icon={CalendarDays} wide>
-        {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-      </Tile>
-      <Tile label="Utilisateur" icon={User}>{shortUser(info.username)}</Tile>
-      <Tile label="Nom du PC" icon={Monitor}>{info.hostname}</Tile>
-      <Tile label="Système" icon={AppWindow}>{info.os}</Tile>
-      <Tile label="Allumé depuis" icon={Power}>{formatUptime(uptime)}</Tile>
-      <Tile label="Processeur" icon={Cpu}>{shortCPU(info.cpu)}</Tile>
+    <div className="info-page">
+      <div className="tile info-clock">
+        <span className="info-time">{now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+        <span className="info-date">
+          {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </span>
+      </div>
+      <div className="tile info-list">
+        {rows.map(({ icon: Icon, label, value }) => (
+          <div className="info-row" key={label}>
+            <span className="tile-label">
+              <span className="tile-icon">
+                <Icon size={20} strokeWidth={2} aria-hidden />
+              </span>
+              {label}
+            </span>
+            <span className="info-value">{value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
