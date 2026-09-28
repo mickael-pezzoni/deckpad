@@ -2272,3 +2272,92 @@ body,
     font-size: 16px;
   }
 }
+
+/* Infos PC : grande horloge à gauche, fiche du PC en liste à droite. */
+.info-page {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+.info-clock {
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.info-time {
+  font-size: clamp(64px, 18vh, 168px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.info-date {
+  color: var(--muted);
+  font-size: clamp(20px, 3.4vh, 30px);
+  text-transform: capitalize;
+}
+
+.info-list {
+  justify-content: space-evenly;
+  gap: 0;
+  padding: 12px 28px;
+}
+
+.info-row {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.info-row + .info-row {
+  border-top: 1px solid var(--soft);
+}
+
+.info-row .tile-label {
+  flex: none;
+}
+
+.info-value {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: right;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (orientation: portrait) {
+  .info-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .info-clock {
+    padding: 28px 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .info-time {
+    font-size: 76px;
+  }
+  .info-date {
+    font-size: 20px;
+  }
+  .info-list {
+    padding: 4px 20px;
+  }
+  .info-value {
+    font-size: 19px;
+  }
+}
