@@ -1,0 +1,48 @@
+.iv-a, .iv-b, .iv-c { display: grid; flex: 1; min-height: 0; gap: var(--gap); }
+.iv-hero { justify-content: center; align-items: center; text-align: center; gap: 4px; }
+.iv-time { font-size: clamp(64px, 18vh, 168px); font-weight: 700; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.iv-date { font-size: clamp(20px, 3.4vh, 30px); color: var(--muted); text-transform: capitalize; }
+
+/* A : horloge géante à gauche, tuiles à droite */
+.iv-a { grid-template-columns: 1fr 1fr; }
+.iv-a-side { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: var(--gap); min-height: 0; }
+
+/* B : carte d'identité du PC en haut, 3 tuiles en bas */
+.iv-b { grid-template-rows: 1.1fr 1fr; }
+.iv-id { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 20px; padding: 32px 40px; }
+.iv-id-icon { display: grid; place-items: center; flex: none; width: 112px; height: 112px; border-radius: 28px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.iv-id-text { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.iv-id-name { font-size: clamp(40px, 9vh, 80px); font-weight: 700; line-height: 1.05; overflow-wrap: anywhere; }
+.iv-id-sub { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 22px; }
+.iv-dot { margin: 0 6px; }
+.iv-b-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); min-height: 0; }
+.iv-b-row .tile-detail { text-transform: capitalize; }
+
+/* C : horloge + fiche technique en liste */
+.iv-c { grid-template-columns: 1fr 1fr; }
+.iv-list { justify-content: space-evenly; gap: 0; padding: 12px 28px; }
+.iv-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+.iv-row + .iv-row { border-top: 1px solid var(--soft); }
+.iv-row-value { font-size: 24px; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+
+@media (max-width: 560px) {
+  .iv-a { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .iv-a .iv-hero { padding: 28px 16px; }
+  .iv-time { font-size: 76px; }
+  .iv-date { font-size: 20px; }
+  .iv-a-side .tile-wide { grid-column: span 2; }
+  .iv-a-side .tile-value { font-size: 22px; }
+
+  .iv-b { grid-template-rows: auto 1fr; }
+  .iv-id { flex-direction: column; text-align: center; gap: 16px; padding: 28px 20px; }
+  .iv-id-icon { width: 84px; height: 84px; border-radius: 22px; }
+  .iv-id-name { font-size: 44px; }
+  .iv-id-sub { justify-content: center; font-size: 18px; }
+  .iv-b-row { grid-template-columns: 1fr; }
+
+  .iv-c { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .iv-c .iv-hero { padding: 28px 16px; }
+  .iv-list { padding: 4px 20px; }
+  .iv-row-value { font-size: 19px; }
+}
