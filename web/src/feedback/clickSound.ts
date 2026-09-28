@@ -1,6 +1,6 @@
 // Petit « clic » joué sur la tablette à chaque appui sur un bouton d'action, sur
 // toutes les pages. Généré avec Web Audio : aucun fichier son à charger.
-// Le menu du bas (changer de page) reste silencieux, et les boutons marqués
+// Le menu du bas (changer de page, thème) reste silencieux, et les boutons marqués
 // data-silent jouent le son eux-mêmes (appui long : au moment où l'action part).
 
 let ctx: AudioContext | null = null
@@ -33,7 +33,7 @@ export function installClickSound() {
     'click',
     (e) => {
       const button = (e.target as Element | null)?.closest('button')
-      if (!button || button.disabled || button.dataset.silent !== undefined || button.closest('.nav-menu')) return
+      if (!button || button.disabled || button.dataset.silent !== undefined || button.closest('.shell-bar')) return
       playClick()
     },
     { capture: true },

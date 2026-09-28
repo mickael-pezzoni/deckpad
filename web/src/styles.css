@@ -10,9 +10,29 @@
   --warning-text: #f2d49b;
   --critical: #d9605c;
   --critical-text: #f5b8b5;
+  --soft: rgb(255 255 255 / 0.06); /* fond d'une pastille posée sur une tuile */
+  --scrim: rgb(0 0 0 / 0.6); /* voile derrière une fenêtre de confirmation */
   --gap: 24px;
   --radius: 20px;
   color-scheme: dark;
+}
+
+/* Thème clair : mêmes jetons, choisis avec le bouton soleil/lune du menu. */
+:root[data-theme='light'] {
+  --bg: #eceff4;
+  --tile: #ffffff;
+  --tile-active: #dde3ec;
+  --text: #161a22;
+  --muted: #5b6474;
+  --accent: #2f6fe0;
+  --danger: #c93a32;
+  --warning: #c98a1e;
+  --warning-text: #7a4a00;
+  --critical: #cf4a45;
+  --critical-text: #9c2420;
+  --soft: rgb(0 0 0 / 0.05);
+  --scrim: rgb(20 24 32 / 0.45);
+  color-scheme: light;
 }
 
 * {
@@ -48,14 +68,22 @@ body,
   min-height: 0;
 }
 
-/* Menu d'icônes : petite barre centrée, la page active montre aussi son nom. */
-.nav-menu {
+/* Barre du bas : menu des pages + bouton de thème, centrés. */
+.shell-bar {
   display: flex;
   flex: none;
   align-self: center;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
   max-width: calc(100% - 32px);
   margin: 0 0 20px;
+}
+
+/* Menu d'icônes : petite barre, la page active montre aussi son nom. */
+.nav-menu {
+  display: flex;
+  min-width: 0;
+  gap: 4px;
   padding: 6px;
   border-radius: 999px;
   background: var(--tile);
@@ -82,6 +110,24 @@ body,
 }
 
 .nav-item:active {
+  background: var(--tile-active);
+}
+
+/* Même hauteur que le menu : pastille ronde à sa droite. */
+.theme-toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border: none;
+  border-radius: 50%;
+  background: var(--tile);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.theme-toggle:active {
   background: var(--tile-active);
 }
 
@@ -202,7 +248,7 @@ body,
 
 /* Pastille d'icône : couleur d'accent sur fond légèrement teinté. */
 .tile-icon-image {
-  background: rgb(255 255 255 / 0.06);
+  background: var(--soft);
   color: var(--muted);
 }
 
@@ -341,7 +387,7 @@ body,
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgb(0 0 0 / 0.6);
+  background: var(--scrim);
 }
 
 .dialog {
@@ -1048,7 +1094,7 @@ body,
 }
 
 .shortcut.is-disabled .shortcut-icon {
-  background: rgb(255 255 255 / 0.06);
+  background: var(--soft);
   color: var(--muted);
 }
 
@@ -1282,11 +1328,15 @@ body,
   .page {
     padding-top: 24px;
   }
-  .nav-menu {
+  .shell-bar {
     margin-bottom: 12px;
   }
   .nav-item {
     height: 52px;
+  }
+  .theme-toggle {
+    width: 64px;
+    height: 64px;
   }
   .tile {
     gap: 8px;
@@ -1298,11 +1348,15 @@ body,
   .page {
     padding: 24px 16px 16px;
   }
-  .nav-menu {
+  .shell-bar {
     align-self: stretch;
-    gap: 2px;
+    gap: 6px;
     max-width: none;
     margin: 0 16px 16px;
+  }
+  .nav-menu {
+    flex: 1;
+    gap: 2px;
   }
   .nav-item {
     flex: 1 1 0; /* les icônes se partagent la largeur, quel que soit le nombre de pages */
@@ -1597,7 +1651,7 @@ body,
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgb(255 255 255 / 0.06);
+  background: var(--soft);
   color: var(--muted);
 }
 
