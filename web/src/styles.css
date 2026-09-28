@@ -186,25 +186,6 @@ body,
   text-overflow: ellipsis;
 }
 
-/* Pages de mesures : 2 colonnes, chiffres lisibles d'un coup d'œil. */
-.grid-large {
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  grid-auto-rows: minmax(170px, 1fr);
-}
-
-.grid-large .tile-value {
-  font-size: clamp(32px, 6vh, 48px);
-}
-
-/* Stats au-dessus d'un seuil : le chiffre prend la couleur du niveau. */
-.grid-large .tile-warning .tile-value {
-  color: var(--warning-text);
-}
-
-.grid-large .tile-critical .tile-value {
-  color: var(--critical-text);
-}
-
 .tile {
   display: flex;
   flex-direction: column;
@@ -2541,217 +2522,20 @@ body,
   }
 }
 
-/* Stats, prototype A : quatre jauges rondes (2 × 2 en portrait). */
-.stats-gauges {
-  display: grid;
-  flex: 1;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--gap);
-  min-height: 0;
-}
-
-.stats-gauge {
-  align-items: stretch;
-}
-
-.stats-gauge .tile-detail {
-  min-height: 1.3em;
-  text-align: center;
-}
-
-.stats-ring {
-  position: relative;
-  display: grid;
-  flex: 1;
-  min-height: 0;
-  place-items: center;
-  --ring: var(--accent);
-}
-
-.stats-ring svg {
-  width: 100%;
-  height: 100%;
-  max-width: 260px;
-  max-height: 260px;
-}
-
-.stats-ring-warning {
-  --ring: var(--warning);
-  color: var(--warning-text);
-}
-
-.stats-ring-critical {
-  --ring: var(--critical);
-  color: var(--critical-text);
-}
-
-.stats-ring-track {
-  fill: none;
-  stroke: var(--tile-active);
-  stroke-width: 9;
-}
-
-.stats-ring-fill {
-  fill: none;
-  stroke: var(--ring);
-  stroke-width: 9;
-  stroke-linecap: round;
-}
-
-.stats-ring-value {
-  position: absolute;
-  font-size: clamp(28px, 5.5vh, 44px);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-
-.stats-ring-empty::before {
-  content: '';
-  width: min(100%, 260px);
-  aspect-ratio: 1;
-  max-height: 100%;
-  border: 9px dashed var(--tile-active);
-  border-radius: 50%;
-  box-sizing: border-box;
-}
-
-@media (orientation: portrait) {
-  .stats-gauges {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  .stats-gauges {
-    gap: 16px;
-  }
-  .stats-gauge {
-    padding: 16px;
-  }
-  .stats-ring-value {
-    font-size: 26px;
-  }
-}
-
-/* Stats, prototype B : une barre par mesure, FPS en grand à côté. */
-.stats-bars-page {
-  display: grid;
-  flex: 1;
-  grid-template-columns: 3fr 2fr;
-  gap: var(--gap);
-  min-height: 0;
-}
-
-.stats-bars {
-  justify-content: space-evenly;
-  gap: 0;
-  padding: 16px 28px;
-}
-
-.stats-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 0;
-}
-
-.stats-bar + .stats-bar {
-  border-top: 1px solid var(--soft);
-}
-
-.stats-bar-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.stats-bar-value {
-  margin-left: auto;
-  font-size: clamp(28px, 5.5vh, 44px);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.stats-bar .usage-bar {
-  height: 16px;
-}
-
-.stats-warning .stats-bar-value {
-  color: var(--warning-text);
-}
-
-.stats-warning .usage-bar span {
-  background: var(--warning);
-}
-
-.stats-critical .stats-bar-value {
-  color: var(--critical-text);
-}
-
-.stats-critical .usage-bar span {
-  background: var(--critical);
-}
-
-.stats-fps {
-  align-items: center;
-  text-align: center;
-}
-
-.stats-fps .tile-head {
-  align-self: stretch;
-}
-
-.stats-fps-value {
-  display: grid;
-  flex: 1;
-  place-items: center;
-  font-size: clamp(72px, 20vh, 180px);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  line-height: 1;
-}
-
-@media (orientation: portrait) {
-  .stats-bars-page {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-  }
-  .stats-fps {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-  .stats-fps .tile-head {
-    align-self: center;
-  }
-  .stats-fps-value {
-    flex: none;
-    font-size: 56px;
-  }
-}
-
-@media (max-width: 560px) {
-  .stats-bars {
-    padding: 4px 20px;
-  }
-  .stats-bar-value {
-    font-size: 30px;
-  }
-  .stats-fps .tile-detail {
-    display: none;
-  }
-  .stats-fps-value {
-    font-size: 40px;
-  }
-}
-
-/* Stats, prototype C : une ligne par mesure, chiffre à gauche, grande courbe à droite. */
+/* Stats : une ligne par mesure, chiffre à gauche, grande courbe à droite. */
 .stats-rows {
   display: grid;
   flex: 1;
   grid-template-rows: repeat(4, 1fr);
+  grid-auto-rows: auto;
   gap: 16px;
   min-height: 0;
+}
+
+.stats-lost {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
 }
 
 .stats-row {
@@ -2835,9 +2619,4 @@ body,
   .stats-row-chart {
     min-height: 0;
   }
-}
-
-.stats-fps-value.stats-fps-empty {
-  color: var(--muted);
-  font-size: 56px;
 }
