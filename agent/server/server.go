@@ -390,7 +390,18 @@ func appHandler() http.Handler {
 			http.Error(w, "Appli web absente : lancez d'abord le build (voir README).", http.StatusNotFound)
 		})
 	}
-	return http.FileServerFS(dist)
+	files := http.FileServerFS(dist)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/manifest.webmanifest":
+			// Type absent de la table de Go (et du registre Windows) : on le donne nous-mêmes.
+			w.Header().Set("Content-Type", "application/manifest+json")
+		case "/sw.js", "/", "/index.html":
+			// Toujours revalider : une nouvelle version de l'exe doit arriver sur la tablette.
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+		files.ServeHTTP(w, r)
+	})
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

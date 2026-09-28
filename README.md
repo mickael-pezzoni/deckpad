@@ -10,6 +10,18 @@ Piloter son PC depuis une tablette pendant qu'on joue : des pages par thème, en
 1. Lancer `deckpad.exe` sur le PC. Il affiche l'adresse à ouvrir (ex : `http://192.168.1.20:8420`).
 2. Ouvrir cette adresse sur la tablette, puis « Ajouter à l'écran d'accueil ».
 
+### Installer l'appli sur la tablette (PWA)
+
+L'agent parle en HTTP simple sur le réseau local. Les navigateurs ne font une vraie appli installée (plein écran, icône, démarrage rapide grâce au cache) qu'en HTTPS. Sans rien faire, « Ajouter à l'écran d'accueil » crée seulement un raccourci qui s'ouvre dans un onglet.
+
+Pour avoir l'appli complète sur Android (Chrome), une seule fois :
+
+1. Dans Chrome, ouvrir `chrome://flags/#unsafely-treat-insecure-origin-as-secure`.
+2. Y coller l'adresse du PC (ex : `http://192.168.1.20:8420`), passer sur « Enabled », relancer Chrome.
+3. Rouvrir l'adresse, puis menu ⋮ → « Installer l'application ».
+
+Sur iPad (Safari), « Partager → Sur l'écran d'accueil » suffit.
+
 Au premier lancement, Windows demande d'autoriser l'accès réseau : accepter pour les réseaux privés.
 
 ### Appairer une tablette
