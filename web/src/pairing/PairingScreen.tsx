@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Delete, MonitorSmartphone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
-import { LanguageSwitch } from '../components/LanguageSwitch'
 
 const LENGTH = 6
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'] as const
@@ -114,7 +113,6 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
 
   return (
     <main className="pairing">
-      <LanguageSwitch className="pairing-lang" />
       <div className="pairing-intro">
         <MonitorSmartphone size={40} strokeWidth={1.75} aria-hidden className="pairing-icon" />
         <h1>{t('pairing.title')}</h1>

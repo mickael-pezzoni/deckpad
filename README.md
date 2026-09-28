@@ -51,7 +51,7 @@ Without a certificate, on Android, you can also enable `chrome://flags/#unsafely
 
 ### Pair a tablet
 
-As long as no tablet is paired, the PC opens a small window at launch with a QR code of the address to open. The tablet then shows a keypad (with a language picker, English by default) and the window a 6-digit code (also printed in the console). Type that code on the tablet: it receives a key and won't have to do it again.
+As long as no tablet is paired, the PC opens a small window at launch with a QR code of the address to open. The tablet then shows a keypad and the window a 6-digit code (also printed in the console). Type that code on the tablet: it receives a key and won't have to do it again.
 
 - The code expires after 5 minutes and locks after 5 wrong attempts.
 - Each device has its own key. The PC only keeps its fingerprint, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs everything.
@@ -95,4 +95,4 @@ App texts: `web/src/i18n/en.ts` and `web/src/i18n/fr.ts` (react-i18next). A text
 | Shortcuts | ✅ tiles configured from the tablet (long press to edit): key combination, program, folder or web address, screen capture copied to the clipboard. Stored in `%APPDATA%\deckpad\shortcuts.json` (Windows) or `~/.config/deckpad/shortcuts.json` (Linux). On Linux, keys need `xdotool` (X11) or `ydotool` (Wayland), capture needs `gnome-screenshot`, `spectacle`, `grim` + `wl-copy` or `maim` + `xclip` |
 | Clipboard | ✅ send text to the PC (copy, open, type), see the PC clipboard, history |
 | System | ✅ lock, sleep, restart, shut down (long press) |
-| Settings | ✅ language (English by default, or French) and start page, saved on the tablet |
+| Settings | ✅ language (the device's language on first launch, English if it is neither English nor French) and start page, saved on the tablet |

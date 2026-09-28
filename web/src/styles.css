@@ -1473,7 +1473,6 @@ body,
 
 /* Appairage : pavé numérique plein écran, sans défilement. */
 .pairing {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2761,31 +2760,3 @@ body,
   }
 }
 
-/* Choix de la langue en haut à droite de l'écran d'appairage (premier lancement). */
-.lang-switch {
-  align-items: center;
-  margin-bottom: 0;
-}
-
-.lang-switch-icon {
-  margin: 0 6px 0 10px;
-  color: var(--muted);
-}
-
-.pairing-lang {
-  position: absolute;
-  top: 20px;
-  right: 24px;
-}
-
-.lang-switch button {
-  min-height: 48px;
-  padding: 0 20px;
-}
-
-@media (max-width: 560px) {
-  .pairing-lang {
-    position: static;
-    align-self: center;
-  }
-}

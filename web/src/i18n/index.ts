@@ -1,6 +1,6 @@
-// Traductions de l'appli (react-i18next). La langue se choisit au premier lancement
-// (écran d'appairage) ou dans Paramètres, et reste mémorisée sur la tablette.
-// Anglais par défaut.
+// Traductions de l'appli (react-i18next). Au premier lancement, on prend la langue
+// de l'appareil (anglais si ce n'est ni le français ni l'anglais) ; elle se change
+// ensuite dans Paramètres et reste mémorisée sur la tablette.
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { fr } from './fr'
@@ -22,6 +22,15 @@ function stored(): Lang | null {
   } catch {
     return null
   }
+}
+
+function fromDevice(): Lang {
+  const langs = navigator.languages?.length ? navigator.languages : [navigator.language]
+  for (const l of langs) {
+    const base = l?.toLowerCase().split('-')[0]
+    if (base === 'fr' || base === 'en') return base
+  }
+  return 'en'
 }
 
 export function getLang(): Lang {
@@ -48,7 +57,7 @@ i18n.on('languageChanged', (lng) => {
 
 i18n.use(initReactI18next).init({
   resources: { fr: { translation: fr }, en: { translation: en } },
-  lng: stored() ?? 'en',
+  lng: stored() ?? fromDevice(),
   fallbackLng: 'en',
   interpolation: { escapeValue: false }, // React échappe déjà
   returnNull: false,
