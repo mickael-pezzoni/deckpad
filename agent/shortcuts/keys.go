@@ -35,3 +35,6 @@ func KeysAvailable() Availability { return keysAvailable() }
 
 // CaptureAvailable indique si ce PC sait copier une capture d'écran.
 func CaptureAvailable() Availability { return captureAvailable() }
+
+// TypeAvailable indique si ce PC peut taper du texte envoyé par la tablette.
+func TypeAvailable() Availability { return typeAvailable() }

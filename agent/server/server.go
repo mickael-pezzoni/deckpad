@@ -12,6 +12,7 @@ import (
 
 	"github.com/mickael-pezzoni/deckpad/agent/audio"
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/clipboard"
 	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/live"
 	"github.com/mickael-pezzoni/deckpad/agent/media"
@@ -56,6 +57,9 @@ func New(store *auth.Store, keys *shortcuts.Store) http.Handler {
 	mux.HandleFunc("GET /api/shortcuts", handleShortcuts(keys))
 	mux.HandleFunc("PUT /api/shortcuts", handleShortcutsSave(keys))
 	mux.HandleFunc("POST /api/shortcuts/{id}/run", handleShortcutRun(keys))
+	mux.Handle("GET /api/clipboard/stream", stream(live.NewHub(time.Second, clipboard.Collect)))
+	mux.HandleFunc("GET /api/clipboard/image", handleClipboardImage)
+	mux.HandleFunc("POST /api/clipboard/send", handleClipboardSend)
 	mux.Handle("/", appHandler())
 	return requireToken(store, mux)
 }
@@ -259,6 +263,58 @@ func handleShortcutRun(keys *shortcuts.Store) http.HandlerFunc {
 		default:
 			w.WriteHeader(http.StatusNoContent)
 		}
+	}
+}
+
+// handleClipboardImage sert l'image du presse-papiers ; l'adresse change avec
+// l'image (?v=…), elle peut donc rester en cache.
+func handleClipboardImage(w http.ResponseWriter, r *http.Request) {
+	data, err := clipboard.Image()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "max-age=86400")
+	if r.URL.Query().Has("download") {
+		name := "presse-papiers-" + time.Now().Format("2006-01-02-150405") + ".png"
+		w.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
+	}
+	w.Write(data)
+}
+
+// handleClipboardSend reçoit un texte de la tablette : copié dans le
+// presse-papiers, ouvert dans le navigateur ou tapé dans la fenêtre active.
+func handleClipboardSend(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Action string `json:"action"` // copy, open ou type
+		Text   string `json:"text"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, clipboard.MaxText+1024)).Decode(&req); err != nil {
+		http.Error(w, "requête invalide", http.StatusBadRequest)
+		return
+	}
+	var err error
+	switch req.Action {
+	case "copy":
+		err = clipboard.SetText(r.Context(), req.Text)
+	case "open":
+		err = shortcuts.OpenURL(req.Text)
+	case "type":
+		err = shortcuts.TypeText(req.Text)
+	default:
+		http.Error(w, "action inconnue", http.StatusBadRequest)
+		return
+	}
+	switch {
+	case errors.Is(err, clipboard.ErrEmpty), errors.Is(err, clipboard.ErrTooLong),
+		errors.Is(err, shortcuts.ErrBadURL), errors.Is(err, shortcuts.ErrLongText):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case err != nil:
+		log.Printf("presse-papiers (%s) : %v", req.Action, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	default:
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

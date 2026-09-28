@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 	"syscall"
+	"time"
+	"unicode/utf16"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -132,4 +134,42 @@ func defaults() []Shortcut {
 		{ID: "desktop", Label: "Afficher le bureau", Icon: "monitor", Color: "purple", Kind: KindKeys, Keys: []string{"win", "d"}},
 		{ID: "calc", Label: "Calculatrice", Icon: "calculator", Color: "teal", Kind: KindLaunch, Command: "calc"},
 	}
+}
+
+const keyEventUnicode = 0x0004
+
+func typeAvailable() Availability { return Availability{OK: true} }
+
+// typeText envoie chaque caractère tel quel (KEYEVENTF_UNICODE) : il s'affiche
+// comme prévu quelle que soit la disposition du clavier. Retour à la ligne et
+// tabulation passent par les vraies touches, que les applis attendent.
+func typeText(text string) error {
+	var in []input
+	for _, r := range text {
+		switch r {
+		case '\n':
+			in = append(in, keyEvent("enter", false), keyEvent("enter", true))
+		case '\t':
+			in = append(in, keyEvent("tab", false), keyEvent("tab", true))
+		default:
+			for _, u := range utf16.Encode([]rune{r}) {
+				in = append(in,
+					input{kind: inputKeyboard, ki: keyboardInput{scan: u, flags: keyEventUnicode}},
+					input{kind: inputKeyboard, ki: keyboardInput{scan: u, flags: keyEventUnicode | keyEventKeyUp}})
+			}
+		}
+	}
+	// Par paquets : certaines applis perdent des caractères s'ils arrivent tous d'un coup.
+	for len(in) > 0 {
+		chunk := in[:min(len(in), 64)]
+		in = in[len(chunk):]
+		n, _, err := procSendInput.Call(uintptr(len(chunk)), uintptr(unsafe.Pointer(&chunk[0])), unsafe.Sizeof(chunk[0]))
+		if int(n) != len(chunk) {
+			return fmt.Errorf("saisie du texte : %v", err)
+		}
+		if len(in) > 0 {
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+	return nil
 }

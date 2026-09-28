@@ -21,3 +21,7 @@ func defaults() []Shortcut {
 		{ID: "home", Label: "Dossier personnel", Icon: "folder", Color: "orange", Kind: KindOpen, Target: "~"},
 	}
 }
+
+func typeAvailable() Availability { return keysAvailable() }
+
+func typeText(string) error { return errors.New("non pris en charge sur ce système") }
