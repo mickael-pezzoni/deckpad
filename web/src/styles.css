@@ -5,6 +5,7 @@
   --text: #f2f4f8;
   --muted: #8a93a3;
   --accent: #4f8cff;
+  --upload: #3cc4a2; /* courbe et icône de l'envoi (Réseau) */
   --danger: #d9443c;
   --warning: #d9a441;
   --warning-text: #f2d49b;
@@ -25,6 +26,7 @@
   --text: #161a22;
   --muted: #5b6474;
   --accent: #2f6fe0;
+  --upload: #149a7b;
   --danger: #c93a32;
   --warning: #c98a1e;
   --warning-text: #7a4a00;
@@ -2461,5 +2463,80 @@ body,
   }
   .info-value {
     font-size: 19px;
+  }
+}
+
+
+/* Réseau : débits + courbe à gauche, fiche de la connexion à droite. */
+.net-page {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+.net-rates {
+  gap: 24px;
+}
+
+.net-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.net-rate {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* L'envoi a sa propre couleur pour ne pas le confondre avec la réception. */
+.net-upload {
+  --accent: var(--upload);
+}
+
+.net-value {
+  font-size: clamp(36px, 7vh, 60px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Les deux courbes superposées remplissent le bas de la carte. */
+.net-chart {
+  position: relative;
+  flex: 1;
+  min-height: 60px;
+}
+
+.net-chart .sparkline,
+.net-chart .net-upload {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+@media (orientation: portrait) {
+  .net-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .net-rates {
+    gap: 16px;
+  }
+  .net-values {
+    gap: 12px;
+  }
+  .net-value {
+    font-size: 30px;
   }
 }

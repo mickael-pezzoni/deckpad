@@ -5,6 +5,25 @@ Piloter son PC depuis une tablette pendant qu'on joue : des pages par thème, en
 - `agent/` : programme Go qui tourne sur le PC (API + appli tablette embarquée), un seul `.exe`.
 - `web/` : appli tablette (React + Vite + Swiper), installable en PWA.
 
+## Aperçu
+
+![Infos PC](docs/screenshots/infos.png)
+
+| | |
+|---|---|
+| ![Stats](docs/screenshots/stats.png) Stats | ![Processus](docs/screenshots/processus.png) Processus |
+| ![Réseau](docs/screenshots/reseau.png) Réseau | ![Audio](docs/screenshots/audio.png) Audio |
+| ![Médias](docs/screenshots/medias.png) Médias | ![Raccourcis](docs/screenshots/raccourcis.png) Raccourcis |
+| ![Fichiers](docs/screenshots/fichiers.png) Fichiers | ![Presse-papiers](docs/screenshots/presse-papiers.png) Presse-papiers |
+| ![Système](docs/screenshots/systeme.png) Système | ![Thème clair](docs/screenshots/infos-clair.png) Thème clair |
+
+Sur téléphone aussi :
+
+<p>
+  <img src="docs/screenshots/stats-telephone.png" alt="Stats sur téléphone" width="240">
+  <img src="docs/screenshots/reseau-telephone.png" alt="Réseau sur téléphone" width="240">
+</p>
+
 ## Utiliser
 
 1. Lancer `deckpad.exe` sur le PC. Il affiche l'adresse à ouvrir (ex : `http://192.168.1.20:8420`).
@@ -66,10 +85,11 @@ Ouvrir l'adresse affichée par Vite (sur le PC ou la tablette). L'appli se recha
 | Infos PC | ✅ |
 | Stats | ✅ CPU, RAM, GPU toutes marques (FPS et température GPU AMD sous Windows à venir) |
 | Processus | ✅ applications de l'utilisateur, tri CPU/RAM, fermeture avec confirmation |
-| Fichiers | à venir |
+| Fichiers | ✅ disques et clés USB, navigation dans les dossiers (lecture seule) |
 | Réseau | ✅ débit en direct, latence, IP locale et publique, type de connexion |
 | Audio | ✅ volume général et par appli, micro, choix de la sortie (casque, enceintes…). Sous Linux : `pactl` requis (fourni avec PulseAudio / PipeWire) |
 | Médias | ✅ titre, artiste, pochette, lecture/pause, suivant/précédent (Spotify, YouTube dans le navigateur, VLC…). Windows 10 1809+ ; sous Linux, tout lecteur compatible MPRIS |
 | Raccourcis | ✅ tuiles configurables depuis la tablette (appui long pour modifier) : combinaison de touches, programme, dossier ou adresse web, capture de l'écran copiée dans le presse-papiers. Enregistrés dans `%APPDATA%\deckpad\shortcuts.json` (Windows) ou `~/.config/deckpad/shortcuts.json` (Linux). Sous Linux, les touches demandent `xdotool` (X11) ou `ydotool` (Wayland), la capture `gnome-screenshot`, `spectacle`, `grim` + `wl-copy` ou `maim` + `xclip` |
+| Presse-papiers | ✅ envoyer un texte au PC (copier, ouvrir, taper), voir le presse-papiers du PC, historique |
 | Système | ✅ verrouiller, veille, redémarrer, éteindre (appui long) |
 | Paramètres | à venir |
