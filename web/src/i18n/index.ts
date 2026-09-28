@@ -1,6 +1,6 @@
-// Traductions de l'appli (react-i18next). La langue est choisie dans Paramètres et
-// mémorisée sur la tablette ; au premier lancement on suit la langue du navigateur,
-// et le français sert de repli.
+// Traductions de l'appli (react-i18next). La langue se choisit au premier lancement
+// (écran d'appairage) ou dans Paramètres, et reste mémorisée sur la tablette.
+// Anglais par défaut.
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { fr } from './fr'
@@ -24,17 +24,8 @@ function stored(): Lang | null {
   }
 }
 
-function fromBrowser(): Lang {
-  const langs = navigator.languages?.length ? navigator.languages : [navigator.language]
-  for (const l of langs) {
-    const base = l?.toLowerCase().split('-')[0]
-    if (base === 'fr' || base === 'en') return base
-  }
-  return 'fr'
-}
-
 export function getLang(): Lang {
-  return i18n.language === 'en' ? 'en' : 'fr'
+  return i18n.language === 'fr' ? 'fr' : 'en'
 }
 
 export function setLang(lang: Lang) {
@@ -48,7 +39,7 @@ export function setLang(lang: Lang) {
 
 // Locale des dates et des nombres (virgule décimale en français, point en anglais).
 export function locale() {
-  return getLang() === 'en' ? 'en-US' : 'fr-FR'
+  return getLang() === 'fr' ? 'fr-FR' : 'en-US'
 }
 
 i18n.on('languageChanged', (lng) => {
@@ -57,8 +48,8 @@ i18n.on('languageChanged', (lng) => {
 
 i18n.use(initReactI18next).init({
   resources: { fr: { translation: fr }, en: { translation: en } },
-  lng: stored() ?? fromBrowser(),
-  fallbackLng: 'fr',
+  lng: stored() ?? 'en',
+  fallbackLng: 'en',
   interpolation: { escapeValue: false }, // React échappe déjà
   returnNull: false,
 })

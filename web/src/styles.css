@@ -139,6 +139,29 @@ body,
   color: var(--accent);
 }
 
+/* Portrait ou écran étroit : icônes seules, réparties sur toute la largeur. La page
+   active reste en couleur ; son nom ne tiendrait pas sans écraser les icônes. */
+@media (orientation: portrait), (max-width: 1000px) {
+  .shell-bar {
+    align-self: stretch;
+    max-width: none;
+    margin: 0 16px 16px;
+  }
+  .nav-menu {
+    flex: 1;
+    justify-content: space-between;
+  }
+  .nav-item,
+  .nav-item.active {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0;
+  }
+  .nav-label {
+    display: none;
+  }
+}
+
 .page {
   display: flex;
   flex-direction: column;
@@ -637,6 +660,7 @@ body,
 }
 
 .audio-outputs {
+  flex: 0 1 auto; /* rétrécit (et passe à la ligne) pour laisser toute sa place au bouton micro */
   flex-wrap: wrap;
   min-width: 0;
   margin-bottom: 0;
@@ -655,6 +679,10 @@ body,
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.audio-outputs button svg {
+  flex: none; /* nom trop long : c'est lui qui est coupé, pas l'icône */
 }
 
 .audio-outputs button.active svg {
@@ -1445,6 +1473,7 @@ body,
 
 /* Appairage : pavé numérique plein écran, sans défilement. */
 .pairing {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2729,5 +2758,34 @@ body,
   .settings-option {
     flex-direction: row;
     min-height: 52px;
+  }
+}
+
+/* Choix de la langue en haut à droite de l'écran d'appairage (premier lancement). */
+.lang-switch {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.lang-switch-icon {
+  margin: 0 6px 0 10px;
+  color: var(--muted);
+}
+
+.pairing-lang {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+}
+
+.lang-switch button {
+  min-height: 48px;
+  padding: 0 20px;
+}
+
+@media (max-width: 560px) {
+  .pairing-lang {
+    position: static;
+    align-self: center;
   }
 }
