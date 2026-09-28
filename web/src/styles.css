@@ -2463,3 +2463,216 @@ body,
     font-size: 19px;
   }
 }
+
+/* PROTOTYPE Réseau */
+:root {
+  --upload: #3cc4a2;
+}
+:root[data-theme='light'] {
+  --upload: #149a7b;
+}
+.net-up,
+.net-c > .tile:last-child {
+  --accent: var(--upload);
+}
+.net-big {
+  font-size: clamp(40px, 9vh, 76px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.net-chart {
+  position: relative;
+  flex: 1;
+  min-height: 60px;
+}
+.net-chart .sparkline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.net-chart .net-up {
+  position: absolute;
+  inset: 0;
+}
+
+/* A : débit + courbe à gauche, fiche à droite */
+.net-a {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--gap);
+  min-height: 0;
+}
+.net-a-rates {
+  gap: 24px;
+}
+.net-a-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.net-a-value {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* B : deux grandes courbes + bandeau */
+.net-b {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  gap: var(--gap);
+  min-height: 0;
+}
+.net-b-rate {
+  gap: 18px;
+}
+.net-b-strip {
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 24px;
+}
+.net-b-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.net-b-item .info-value {
+  text-align: left;
+  font-size: 22px;
+}
+
+/* C : état de la connexion + deux tuiles de débit */
+.net-c {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--gap);
+  min-height: 0;
+}
+.net-c-hero {
+  grid-row: span 2;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+.net-c-icon {
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  margin-bottom: 8px;
+  border-radius: 40px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.net-c-kind {
+  font-size: clamp(40px, 8vh, 64px);
+  font-weight: 700;
+  line-height: 1;
+}
+.net-c-quality {
+  color: var(--muted);
+  font-size: 20px;
+}
+.net-c-ips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+  margin-top: 18px;
+}
+.net-c-ips span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--soft);
+  font-size: 18px;
+  font-weight: 600;
+}
+.net-c-ips svg {
+  color: var(--muted);
+}
+
+@media (orientation: portrait) {
+  .net-a {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .net-c {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr 1fr;
+  }
+  .net-c-hero {
+    grid-row: auto;
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .net-big {
+    font-size: 40px;
+  }
+  .net-a-rates {
+    gap: 16px;
+  }
+  .net-b {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr auto;
+  }
+  .net-b-strip {
+    grid-column: auto;
+    grid-template-columns: 1fr 1fr;
+    padding: 16px 20px;
+  }
+  .net-b-item .info-value {
+    font-size: 18px;
+  }
+  .net-c-icon {
+    width: 88px;
+    height: 88px;
+    border-radius: 28px;
+  }
+  .net-c-icon svg {
+    width: 44px;
+    height: 44px;
+  }
+  .net-c-kind {
+    font-size: 40px;
+  }
+  .net-c-quality {
+    font-size: 17px;
+  }
+  .net-c-ips {
+    margin-top: 8px;
+  }
+  .net-c-ips span {
+    font-size: 16px;
+  }
+}
+.net-big {
+  white-space: nowrap;
+}
+.net-a .net-big {
+  font-size: clamp(36px, 7vh, 60px);
+}
+@media (max-width: 560px) {
+  .net-a .net-big {
+    font-size: 30px;
+  }
+  .net-a-values {
+    gap: 12px;
+  }
+}
