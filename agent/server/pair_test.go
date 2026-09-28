@@ -21,7 +21,7 @@ func TestPairingProtectsAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := New(store, keys)
+	h := New(store, keys, nil)
 	do := func(method, target, body string, setup func(*http.Request)) *httptest.ResponseRecorder {
 		r := httptest.NewRequest(method, target, strings.NewReader(body)) // vient de 192.0.2.1 : la tablette
 		if setup != nil {
@@ -84,5 +84,50 @@ func TestPairingProtectsAPI(t *testing.T) {
 		r.AddCookie(&http.Cookie{Name: tokenCookie, Value: "fausse"})
 	}); w.Code != http.StatusUnauthorized {
 		t.Errorf("fausse clé acceptée : %d", w.Code)
+	}
+}
+
+func TestHandoffCarriesPairingToHTTPS(t *testing.T) {
+	store, err := auth.Open(filepath.Join(t.TempDir(), "devices.json"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys, err := shortcuts.Open(filepath.Join(t.TempDir(), "shortcuts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := New(store, keys, nil)
+	do := func(method, target, body string, cookie *http.Cookie) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, target, strings.NewReader(body))
+		if cookie != nil {
+			r.AddCookie(cookie)
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w
+	}
+
+	if w := do("POST", "/api/pair/handoff", "", nil); w.Code != http.StatusUnauthorized {
+		t.Fatalf("passage accordé sans appairage : %d", w.Code)
+	}
+
+	store.Start()
+	code := store.Code().Code
+	w := do("POST", "/api/pair/confirm", `{"code":"`+code+`"}`, nil)
+	cookie := w.Result().Cookies()[0]
+
+	w = do("POST", "/api/pair/handoff", "", cookie)
+	var res struct{ Code string }
+	json.NewDecoder(w.Body).Decode(&res)
+	if res.Code == "" {
+		t.Fatalf("pas de code de passage : %d", w.Code)
+	}
+	w = do("POST", "/api/pair/claim", `{"code":"`+res.Code+`"}`, nil)
+	got := w.Result().Cookies()
+	if w.Code != http.StatusNoContent || len(got) != 1 || got[0].Value != cookie.Value {
+		t.Fatalf("appairage non transmis : %d", w.Code)
+	}
+	if w := do("POST", "/api/pair/claim", `{"code":"`+res.Code+`"}`, nil); w.Code != http.StatusGone {
+		t.Fatalf("code de passage réutilisable : %d", w.Code)
 	}
 }

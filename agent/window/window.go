@@ -27,7 +27,7 @@ func Open(url string) error {
 func appArgs(url string) []string {
 	args := []string{
 		"--app=" + url,
-		"--window-size=460,420",
+		"--window-size=460,520",
 		"--no-first-run",
 		"--no-default-browser-check",
 	}
