@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Delete, MonitorSmartphone } from 'lucide-react'
+import { ArrowLeft, Delete, MonitorSmartphone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../i18n'
+import { IconButton } from '../components/IconButton'
+import type { PC } from '../pcs/pcs'
 
 const LENGTH = 6
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'] as const
@@ -24,20 +26,28 @@ function deviceName() {
   return i18n.t('pairing.deviceOther')
 }
 
-// Premier lancement : le PC affiche un code, on le tape ici.
-export function PairingScreen({ onPaired }: { onPaired: () => void }) {
+type Props = {
+  pc: PC
+  onPaired: () => void
+  onBack: () => void
+}
+
+// Le PC choisi affiche un code, on le tape ici. Ce code associe à la fois la
+// tablette au hub (si besoin) et le hub à ce PC.
+export function PairingScreen({ pc, onPaired, onBack }: Props) {
   const { t } = useTranslation()
   const [digits, setDigits] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'starting' })
+  const base = `/api/pc/${encodeURIComponent(pc.id)}/pair`
 
   const start = useCallback(async () => {
     setDigits('')
     setStatus({ kind: 'starting' })
-    const r = await fetch('/api/pair/start', { method: 'POST' }).catch(() => null)
+    const r = await fetch(`${base}/start`, { method: 'POST' }).catch(() => null)
     if (!r) setStatus({ kind: 'offline' })
     else if (r.status === 429) setStatus({ kind: 'blocked', message: 'pairing.tooMany' })
     else setStatus(r.ok ? { kind: 'ready' } : { kind: 'offline' })
-  }, [])
+  }, [base])
 
   useEffect(() => {
     start()
@@ -46,7 +56,7 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
   const submit = useCallback(
     async (code: string) => {
       setStatus({ kind: 'checking' })
-      const r = await fetch('/api/pair/confirm', {
+      const r = await fetch(`${base}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, name: deviceName() }),
@@ -59,7 +69,7 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
       else if (err?.reason === 'expired') setStatus({ kind: 'blocked', message: 'pairing.expired' })
       else setStatus({ kind: 'offline' })
     },
-    [onPaired],
+    [base, onPaired],
   )
 
   const locked = status.kind !== 'ready' && status.kind !== 'wrong'
@@ -108,11 +118,14 @@ export function PairingScreen({ onPaired }: { onPaired: () => void }) {
       message = t('pairing.offline')
       break
     default:
-      message = t('pairing.prompt')
+      message = t('pairing.prompt', { name: pc.name })
   }
 
   return (
     <main className="pairing">
+      <div className="pairing-back">
+        <IconButton icon={ArrowLeft} label={t('common.back')} onClick={onBack} />
+      </div>
       <div className="pairing-intro">
         <MonitorSmartphone size={40} strokeWidth={1.75} aria-hidden className="pairing-icon" />
         <h1>{t('pairing.title')}</h1>

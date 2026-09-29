@@ -9,6 +9,7 @@ import { UsageBar } from '../components/UsageBar'
 import { usePageActive } from '../layout/pageActive'
 import { formatBytes } from '../format'
 import { FILE_ICONS, fileKind } from '../files/fileKind'
+import { api } from '../api'
 
 type Drive = { path: string; name: string; total: number; used: number; removable: boolean }
 type Entry = { name: string; dir: boolean; size: number }
@@ -40,7 +41,7 @@ export function FilesPage() {
   const open = useCallback(async (path: string, onFail?: () => void) => {
     const id = ++request.current
     setLoading(true)
-    const r = await fetch(`/api/files/list?path=${encodeURIComponent(path)}`).catch(() => null)
+    const r = await fetch(api(`/files/list?path=${encodeURIComponent(path)}`)).catch(() => null)
     const data: Listing | null = r?.ok ? await r.json().catch(() => null) : null
     if (id !== request.current) return // une autre navigation a pris le relais
     setLoading(false)
@@ -55,14 +56,14 @@ export function FilesPage() {
   // Liste des disques rechargée à chaque retour sur la page (clé USB branchée entre-temps).
   useEffect(() => {
     if (!active || drive) return
-    fetch('/api/files/drives')
+    fetch(api('/files/drives'))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: Drive[]) => {
         setDrives(d)
         setDrivesError(false)
       })
       .catch(() => setDrivesError(true))
-    fetch('/api/files/recent')
+    fetch(api('/files/recent'))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setRecents)
       .catch(() => setRecents([]))

@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const outDir = '../agent/webdist/dist'
+const outDir = '../hub/webdist/dist'
 
 export default defineConfig({
   plugins: [
@@ -18,10 +18,10 @@ export default defineConfig({
   build: { outDir, emptyOutDir: true },
   server: {
     host: true, // accessible depuis la tablette sur le réseau local
-    // xfwd : l'agent voit que la requête vient de la tablette, pas du PC (voir localOnly).
+    // Tout passe par le hub, qui relaie vers les PC.
     proxy: {
-      '/api': { target: 'http://localhost:8420', xfwd: true },
-      '/ca': { target: 'http://localhost:8420', xfwd: true }, // certificat HTTPS à installer
+      '/api': 'http://localhost:8430',
+      '/ca': 'http://localhost:8430', // certificat HTTPS à installer
     },
   },
 })

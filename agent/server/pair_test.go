@@ -21,9 +21,9 @@ func TestPairingProtectsAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := New(store, keys, nil)
+	h := New(store, keys)
 	do := func(method, target, body string, setup func(*http.Request)) *httptest.ResponseRecorder {
-		r := httptest.NewRequest(method, target, strings.NewReader(body)) // vient de 192.0.2.1 : la tablette
+		r := httptest.NewRequest(method, target, strings.NewReader(body)) // vient de 192.0.2.1 : le hub
 		if setup != nil {
 			setup(r)
 		}
@@ -45,7 +45,7 @@ func TestPairingProtectsAPI(t *testing.T) {
 
 	// Le code n'est lisible que depuis le PC, jamais via un relais ou un autre nom d'hôte.
 	if w := do("GET", "/api/pair/code", "", nil); w.Code != http.StatusForbidden {
-		t.Errorf("code lisible depuis la tablette : %d", w.Code)
+		t.Errorf("code lisible depuis le réseau : %d", w.Code)
 	}
 	if w := do("GET", "/api/pair/code", "", func(r *http.Request) { fromPC(r); r.Header.Set("X-Forwarded-For", "192.168.1.20") }); w.Code != http.StatusForbidden {
 		t.Errorf("code lisible via le proxy de dev : %d", w.Code)
@@ -67,67 +67,20 @@ func TestPairingProtectsAPI(t *testing.T) {
 	if w := do("POST", "/api/pair/confirm", `{"code":"`+wrong+`"}`, nil); w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), `"remaining":4`) {
 		t.Errorf("mauvais code : %d %s", w.Code, w.Body)
 	}
-	w = do("POST", "/api/pair/confirm", `{"code":"`+st.Code+`","name":"iPad"}`, nil)
-	cookies := w.Result().Cookies()
-	if w.Code != http.StatusNoContent || len(cookies) != 1 || !cookies[0].HttpOnly {
-		t.Fatalf("confirm : %d %v", w.Code, cookies)
+	w = do("POST", "/api/pair/confirm", `{"code":"`+st.Code+`","name":"deckpad hub"}`, nil)
+	var res struct{ Token string }
+	json.NewDecoder(w.Body).Decode(&res)
+	if w.Code != http.StatusOK || res.Token == "" {
+		t.Fatalf("confirm : %d %+v", w.Code, res)
 	}
 
-	withCookie := func(r *http.Request) { r.AddCookie(cookies[0]) }
-	if w := do("GET", "/api/pair/status", "", withCookie); !strings.Contains(w.Body.String(), `"paired":true`) {
-		t.Errorf("status : %s", w.Body)
+	bearer := func(tok string) func(*http.Request) {
+		return func(r *http.Request) { r.Header.Set("Authorization", "Bearer "+tok) }
 	}
-	if w := do("POST", "/api/system/nope", "", withCookie); w.Code != http.StatusBadRequest {
+	if w := do("POST", "/api/system/nope", "", bearer(res.Token)); w.Code != http.StatusBadRequest {
 		t.Errorf("API fermée malgré la clé : %d", w.Code)
 	}
-	if w := do("POST", "/api/system/nope", "", func(r *http.Request) {
-		r.AddCookie(&http.Cookie{Name: tokenCookie, Value: "fausse"})
-	}); w.Code != http.StatusUnauthorized {
+	if w := do("POST", "/api/system/nope", "", bearer("fausse")); w.Code != http.StatusUnauthorized {
 		t.Errorf("fausse clé acceptée : %d", w.Code)
-	}
-}
-
-func TestHandoffCarriesPairingToHTTPS(t *testing.T) {
-	store, err := auth.Open(filepath.Join(t.TempDir(), "devices.json"), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	keys, err := shortcuts.Open(filepath.Join(t.TempDir(), "shortcuts.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	h := New(store, keys, nil)
-	do := func(method, target, body string, cookie *http.Cookie) *httptest.ResponseRecorder {
-		r := httptest.NewRequest(method, target, strings.NewReader(body))
-		if cookie != nil {
-			r.AddCookie(cookie)
-		}
-		w := httptest.NewRecorder()
-		h.ServeHTTP(w, r)
-		return w
-	}
-
-	if w := do("POST", "/api/pair/handoff", "", nil); w.Code != http.StatusUnauthorized {
-		t.Fatalf("passage accordé sans appairage : %d", w.Code)
-	}
-
-	store.Start()
-	code := store.Code().Code
-	w := do("POST", "/api/pair/confirm", `{"code":"`+code+`"}`, nil)
-	cookie := w.Result().Cookies()[0]
-
-	w = do("POST", "/api/pair/handoff", "", cookie)
-	var res struct{ Code string }
-	json.NewDecoder(w.Body).Decode(&res)
-	if res.Code == "" {
-		t.Fatalf("pas de code de passage : %d", w.Code)
-	}
-	w = do("POST", "/api/pair/claim", `{"code":"`+res.Code+`"}`, nil)
-	got := w.Result().Cookies()
-	if w.Code != http.StatusNoContent || len(got) != 1 || got[0].Value != cookie.Value {
-		t.Fatalf("appairage non transmis : %d", w.Code)
-	}
-	if w := do("POST", "/api/pair/claim", `{"code":"`+res.Code+`"}`, nil); w.Code != http.StatusGone {
-		t.Fatalf("code de passage réutilisable : %d", w.Code)
 	}
 }

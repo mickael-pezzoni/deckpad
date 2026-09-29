@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useEventStream } from './useEventStream'
+import { api } from '../api'
 
 export type Stats = {
   cpu: number
@@ -14,7 +15,7 @@ const HISTORY = 60 // une minute à 1 mesure/s
 // Reçoit les stats poussées par l'agent et garde un historique court pour les courbes.
 export function useStatsStream() {
   const [history, setHistory] = useState<Stats[]>([])
-  const connected = useEventStream<Stats>('/api/stats/stream', (s) =>
+  const connected = useEventStream<Stats>(api('/stats/stream'), (s) =>
     setHistory((h) => [...h.slice(-(HISTORY - 1)), s]),
     { keepAlive: true }, // garde les courbes complètes
   )

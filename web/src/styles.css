@@ -2885,3 +2885,209 @@ body,
   }
 }
 
+
+/* Choix du PC : une grande tuile par PC, centrées, sans défilement de page. */
+.pcs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  height: 100%;
+  overflow: hidden;
+  padding: 32px 40px;
+}
+
+.pcs-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+/* Beaucoup de PC : seule la grille défile, sans barre visible. */
+.pcs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap);
+  max-width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.pcs-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.pc-tile {
+  align-items: center;
+  justify-content: center;
+  width: 240px;
+  aspect-ratio: 1;
+  text-align: center;
+}
+
+.pc-tile.is-current {
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.pc-tile:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pc-icon {
+  color: var(--accent);
+}
+
+.pc-tile:disabled .pc-icon {
+  color: var(--muted);
+}
+
+.pc-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 24px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pc-status {
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.pc-tile.is-new .pc-status {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.pcs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.pcs-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+/* Retour à la liste des PC depuis le code. */
+.pairing {
+  position: relative;
+}
+
+.pairing-back {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+}
+
+/* Barre du bas : le PC piloté, pour en changer. */
+.pc-switch {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  max-width: 220px;
+  height: 68px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 999px;
+  background: var(--tile);
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-switch:active {
+  background: var(--tile-active);
+}
+
+.pc-switch svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.pc-switch-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-height: 700px) {
+  .pc-switch {
+    height: 64px;
+  }
+}
+
+/* Portrait ou écran étroit : icône seule, comme le bouton de thème. */
+@media (orientation: portrait), (max-width: 1000px) {
+  .pc-switch {
+    justify-content: center;
+    width: 68px;
+    padding: 0;
+  }
+  .pc-switch-name {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .pcs {
+    padding: 24px 16px;
+  }
+  .pcs-grid {
+    gap: 16px;
+  }
+  .pc-tile {
+    width: calc(50% - 8px);
+    min-width: 150px;
+  }
+  .pc-switch {
+    width: 64px;
+    height: 64px;
+  }
+  .pc-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Paramètres : PC piloté et langue côte à côte. */
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--gap);
+}
+
+.settings-pc {
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 12px 20px;
+  color: var(--text);
+}
+
+.settings-pc svg {
+  flex: none;
+  color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .settings-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  /* Téléphone : la barre du bas est pleine, on change de PC depuis Paramètres. */
+  .pc-switch {
+    display: none;
+  }
+}

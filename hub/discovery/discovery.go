@@ -1,6 +1,6 @@
 // Package discovery trouve les agents deckpad du réseau local en mDNS.
 //
-// Le type de service « _deckpad._tcp » et les clés TXT (id, v, https) sont
+// Le type de service « _deckpad._tcp » et les clés TXT (id, v) sont
 // partagés avec agent/discovery : les changer des deux côtés à la fois.
 package discovery
 
@@ -26,6 +26,8 @@ const (
 	scanFor = 5 * time.Second
 	every   = 15 * time.Second
 	maxAge  = 50 * time.Second
+
+	minVersion = 2
 )
 
 // Run cherche les agents jusqu'à l'arrêt de ctx et tient reg à jour.
@@ -73,7 +75,8 @@ func closeIfOpen(ch chan *zeroconf.ServiceEntry) {
 }
 
 // FromEntry convertit une réponse mDNS en agent. ok est faux si ce n'est pas
-// un agent deckpad utilisable (pas d'identifiant ni d'adresse IPv4).
+// un agent deckpad utilisable : sans identifiant, sans adresse IPv4, ou trop
+// ancien (avant la version 2, l'agent servait l'appli et non une API HTTPS).
 func FromEntry(e *zeroconf.ServiceEntry) (a registry.Agent, ok bool) {
 	txt := map[string]string{}
 	for _, kv := range e.Text {
@@ -86,11 +89,11 @@ func FromEntry(e *zeroconf.ServiceEntry) (a registry.Agent, ok bool) {
 		Port:    e.Port,
 		Version: txt["v"],
 	}
-	a.HTTPSPort, _ = strconv.Atoi(txt["https"])
 	for _, ip := range e.AddrIPv4 {
 		a.IPs = append(a.IPs, ip.String())
 	}
-	return a, a.ID != "" && len(a.IPs) > 0
+	v, _ := strconv.Atoi(a.Version)
+	return a, a.ID != "" && len(a.IPs) > 0 && v >= minVersion
 }
 
 // unescape retire les « \ » que DNS ajoute devant les espaces et les points

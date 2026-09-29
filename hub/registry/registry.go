@@ -10,13 +10,12 @@ import (
 
 // Agent est un PC qui fait tourner deckpad.
 type Agent struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	IPs       []string  `json:"ips"`
-	Port      int       `json:"port"`                // HTTP
-	HTTPSPort int       `json:"httpsPort,omitempty"` // 0 si HTTPS désactivé
-	Version   string    `json:"version"`
-	LastSeen  time.Time `json:"lastSeen"`
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	IPs      []string  `json:"ips"`
+	Port     int       `json:"port"` // API HTTPS
+	Version  string    `json:"version"`
+	LastSeen time.Time `json:"lastSeen"`
 }
 
 type Registry struct {
@@ -39,6 +38,14 @@ func (r *Registry) Seen(a Agent) {
 	r.mu.Lock()
 	r.agents[a.ID] = a
 	r.mu.Unlock()
+}
+
+// Get renvoie l'agent id s'il est actuellement sur le réseau.
+func (r *Registry) Get(id string) (Agent, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	a, ok := r.agents[id]
+	return a, ok
 }
 
 // Prune retire les agents muets depuis plus de maxAge (PC éteint, agent fermé).

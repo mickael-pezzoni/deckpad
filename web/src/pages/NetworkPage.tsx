@@ -7,6 +7,7 @@ import { Sparkline } from '../components/Sparkline'
 import { InfoList } from '../components/InfoList'
 import { useEventStream } from '../hooks/useEventStream'
 import { Loader } from '../components/Loader'
+import { api } from '../api'
 
 type Net = {
   interface: string
@@ -23,13 +24,13 @@ export function NetworkPage() {
   const { t } = useTranslation()
   const [history, setHistory] = useState<Net[]>([])
   const [publicIP, setPublicIP] = useState<string | null>(null)
-  const connected = useEventStream<Net>('/api/network/stream', (n) =>
+  const connected = useEventStream<Net>(api('/network/stream'), (n) =>
     setHistory((h) => [...h.slice(-(HISTORY - 1)), n]),
     { keepAlive: true }, // garde les courbes complètes
   )
 
   useEffect(() => {
-    fetch('/api/network/public-ip')
+    fetch(api('/network/public-ip'))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => setPublicIP(d.ip))
       .catch(() => setPublicIP('')) // vide : affiché « Indisponible »

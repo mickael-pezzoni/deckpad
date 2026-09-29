@@ -1,7 +1,7 @@
 // Package discovery annonce l'agent sur le réseau local en mDNS, pour que le
 // serveur central deckpad le trouve sans rien configurer.
 //
-// Le type de service « _deckpad._tcp » et les clés TXT (id, v, https) sont
+// Le type de service « _deckpad._tcp » et les clés TXT (id, v) sont
 // partagés avec hub/discovery : les changer des deux côtés à la fois.
 package discovery
 
@@ -20,17 +20,18 @@ import (
 const (
 	Service = "_deckpad._tcp"
 	Domain  = "local."
-	// Version du protocole annoncé, incrémentée si le serveur doit s'adapter.
-	Version = "1"
+	// Version du protocole annoncé, incrémentée si le hub doit s'adapter.
+	// 2 : le port annoncé est celui de l'API HTTPS (plus d'appli servie par l'agent).
+	Version = "2"
 )
 
 // Announcer garde l'annonce active tant qu'elle n'est pas arrêtée.
 type Announcer struct{ srv *zeroconf.Server }
 
-// Announce publie l'agent : name est le nom affiché (celui du PC), port le port
-// HTTP, httpsPort le port HTTPS (vide si désactivé), id un identifiant stable.
-func Announce(name, id string, port int, httpsPort string) (*Announcer, error) {
-	srv, err := zeroconf.Register(name, Service, Domain, port, Text(id, httpsPort), nil)
+// Announce publie l'agent : name est le nom affiché (celui du PC), port celui
+// de l'API HTTPS, id un identifiant stable.
+func Announce(name, id string, port int) (*Announcer, error) {
+	srv, err := zeroconf.Register(name, Service, Domain, port, Text(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -38,12 +39,8 @@ func Announce(name, id string, port int, httpsPort string) (*Announcer, error) {
 }
 
 // Text construit les enregistrements TXT de l'annonce.
-func Text(id, httpsPort string) []string {
-	txt := []string{"id=" + id, "v=" + Version}
-	if httpsPort != "" {
-		txt = append(txt, "https="+httpsPort)
-	}
-	return txt
+func Text(id string) []string {
+	return []string{"id=" + id, "v=" + Version}
 }
 
 // Stop retire l'annonce (le serveur voit le PC disparaître tout de suite).

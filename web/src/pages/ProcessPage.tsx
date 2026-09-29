@@ -10,6 +10,7 @@ import { useEventStream } from '../hooks/useEventStream'
 import { Loader } from '../components/Loader'
 import { SearchField, matches } from '../components/SearchField'
 import type { Stats } from '../hooks/useStatsStream'
+import { api } from '../api'
 
 type App = { name: string; cpu: number; ram: number; count: number }
 type SortKey = 'cpu' | 'ram'
@@ -24,8 +25,8 @@ export function ProcessPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
   const [query, setQuery] = useState('')
-  const connected = useEventStream<App[]>('/api/processes/stream', setApps)
-  useEventStream<Stats>('/api/stats/stream', setStats)
+  const connected = useEventStream<App[]>(api('/processes/stream'), setApps)
+  useEventStream<Stats>(api('/stats/stream'), setStats)
 
   useEffect(() => {
     if (!notice) return
@@ -34,7 +35,7 @@ export function ProcessPage() {
   }, [notice])
 
   async function kill(app: App) {
-    const r = await fetch('/api/processes/kill', {
+    const r = await fetch(api('/processes/kill'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: app.name }),

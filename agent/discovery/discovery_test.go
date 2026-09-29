@@ -31,10 +31,7 @@ func TestLoadIDEmptyFileRegenerates(t *testing.T) {
 }
 
 func TestText(t *testing.T) {
-	if got := Text("abc", "8421"); !slices.Equal(got, []string{"id=abc", "v=1", "https=8421"}) {
+	if got := Text("abc"); !slices.Equal(got, []string{"id=abc", "v=2"}) {
 		t.Errorf("Text = %v", got)
-	}
-	if got := Text("abc", ""); !slices.Equal(got, []string{"id=abc", "v=1"}) {
-		t.Errorf("Text sans HTTPS = %v", got)
 	}
 }

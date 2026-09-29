@@ -1,5 +1,5 @@
-// Package auth gère l'appairage des tablettes : un code à 6 chiffres affiché sur
-// le PC, échangé contre une clé secrète que la tablette garde ensuite.
+// Package auth gère l'appairage avec le hub : un code à 6 chiffres affiché sur
+// le PC, échangé contre une clé secrète que le hub garde ensuite.
 package auth
 
 import (
@@ -14,6 +14,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 )
@@ -157,9 +158,13 @@ func (s *Store) Confirm(code, deviceName string) (token string, remaining int, e
 	if err != nil {
 		return "", 0, err
 	}
+	// Un appareil qui s'appaire de nouveau (le hub, pour une nouvelle tablette)
+	// remplace son ancienne clé au lieu de s'ajouter une fois de plus.
+	prev := s.devices
+	s.devices = slices.DeleteFunc(slices.Clone(prev), func(d Device) bool { return d.Name == deviceName })
 	s.devices = append(s.devices, Device{Name: deviceName, TokenHash: hash(token), PairedAt: s.now()})
 	if err := s.save(); err != nil {
-		s.devices = s.devices[:len(s.devices)-1]
+		s.devices = prev
 		return "", 0, err
 	}
 	s.pending = nil

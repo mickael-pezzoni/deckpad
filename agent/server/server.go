@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 	"time"
@@ -22,27 +21,18 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
 	"github.com/mickael-pezzoni/deckpad/agent/sysinfo"
 	"github.com/mickael-pezzoni/deckpad/agent/system"
-	"github.com/mickael-pezzoni/deckpad/agent/webdist"
 )
 
-// New construit le routeur : /api/* pour les données, tout le reste pour l'appli.
-// Seuls les appareils appairés dans store accèdent à l'API. sec peut être nil (pas de HTTPS).
-func New(store *auth.Store, keys *shortcuts.Store, sec *Secure) http.Handler {
+// New construit le routeur de l'API, appelée par le hub (l'appli est servie par le hub).
+// Seul le hub appairé dans store y accède.
+func New(store *auth.Store, keys *shortcuts.Store) http.Handler {
 	procs := process.NewLister()
-	handoff := &handoffs{codes: map[string]handoff{}}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/pair/status", handlePairStatus(store))
 	mux.HandleFunc("POST /api/pair/start", handlePairStart(store))
 	mux.HandleFunc("POST /api/pair/confirm", handlePairConfirm(store))
 	mux.HandleFunc("GET /api/pair/code", handlePairCode(store))
-	mux.HandleFunc("GET /api/pair/secure", handleSecureInfo(sec))
-	mux.HandleFunc("POST /api/pair/handoff", handleHandoff(store, handoff))
-	mux.HandleFunc("POST /api/pair/claim", handleClaim(store, handoff))
-	mux.HandleFunc("GET /ca", handleCA(sec))
 	mux.HandleFunc("GET /pair-code", localOnly(handlePairWindow))
-	mux.HandleFunc("GET /pair-qr", handlePairQR(sec))
-	mux.HandleFunc("GET /pair-url", handlePairURL(sec))
 	mux.HandleFunc("GET /api/info", handleInfo)
 	mux.Handle("GET /api/stats/stream", stream(live.NewHub(time.Second, stats.Collect)))
 	mux.Handle("GET /api/processes/stream", stream(live.NewHub(2*time.Second, procs.Apps)))
@@ -68,7 +58,6 @@ func New(store *auth.Store, keys *shortcuts.Store, sec *Secure) http.Handler {
 	mux.Handle("GET /api/clipboard/stream", stream(live.NewHub(time.Second, clipboard.Collect)))
 	mux.HandleFunc("GET /api/clipboard/image", handleClipboardImage)
 	mux.HandleFunc("POST /api/clipboard/send", handleClipboardSend)
-	mux.Handle("/", appHandler())
 	return requireToken(store, mux)
 }
 
@@ -395,34 +384,6 @@ func stream[T any](hub *live.Hub[T]) http.HandlerFunc {
 			}
 		}
 	}
-}
-
-func appHandler() http.Handler {
-	dist, err := fs.Sub(webdist.Files, "dist")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if _, err := fs.Stat(dist, "index.html"); err != nil {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "Appli web absente : lancez d'abord le build (voir README).", http.StatusNotFound)
-		})
-	}
-	files := http.FileServerFS(dist)
-	manifest, index := namedManifest(dist), namedIndex(dist)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/manifest.webmanifest":
-			manifest(w, r)
-			return
-		case "/", "/index.html":
-			index(w, r)
-			return
-		case "/sw.js":
-			// Toujours revalider : une nouvelle version de l'exe doit arriver sur la tablette.
-			w.Header().Set("Cache-Control", "no-cache")
-		}
-		files.ServeHTTP(w, r)
-	})
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

@@ -5,6 +5,7 @@ import i18n, { locale } from '../i18n'
 import { Loader } from '../components/Loader'
 import { InfoList } from '../components/InfoList'
 import { usePageActive } from '../layout/pageActive'
+import { api } from '../api'
 
 type Info = {
   hostname: string
@@ -27,7 +28,7 @@ export function InfoPage() {
   useEffect(() => {
     if (!active) return
     const load = () =>
-      fetch('/api/info')
+      fetch(api('/info'))
         .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
         .then((i) => {
           setInfo(i)

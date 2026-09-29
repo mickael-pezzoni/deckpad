@@ -7,6 +7,7 @@ import { ShortcutTile } from '../components/ShortcutTile'
 import { ShortcutEditor } from '../components/ShortcutEditor'
 import { usePageActive } from '../layout/pageActive'
 import { unavailable, type Shortcut, type ShortcutsState } from '../shortcuts/types'
+import { api } from '../api'
 
 // Taille minimale d'une tuile (plus petite sur téléphone) : sert à calculer
 // combien en tiennent sur l'écran.
@@ -35,7 +36,7 @@ export function ShortcutsPage() {
   // Rechargés à chaque retour sur la page : un autre appareil a pu les modifier.
   useEffect(() => {
     if (!active) return
-    fetch('/api/shortcuts')
+    fetch(api('/shortcuts'))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((s: ShortcutsState) => {
         setState(s)
@@ -47,14 +48,14 @@ export function ShortcutsPage() {
   async function run(s: Shortcut) {
     const reason = state && unavailable(s, state)
     if (reason) return setNotice(reason)
-    const r = await fetch(`/api/shortcuts/${encodeURIComponent(s.id)}/run`, { method: 'POST' }).catch(() => null)
+    const r = await fetch(api(`/shortcuts/${encodeURIComponent(s.id)}/run`), { method: 'POST' }).catch(() => null)
     if (!r?.ok) setNotice(r ? `${s.label} : ${(await r.text()).trim()}` : t('common.unreachable'))
     else if (s.kind === 'capture') setNotice(t('shortcuts.captured'))
   }
 
   // Enregistre toute la liste sur le PC ; renvoie un message d'erreur.
   const store = useCallback(async (list: Shortcut[]) => {
-    const r = await fetch('/api/shortcuts', {
+    const r = await fetch(api('/shortcuts'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(list),

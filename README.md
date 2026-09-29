@@ -2,9 +2,9 @@
 
 Control your PC from a tablet while you play: themed pages you swipe through, with big tiles.
 
-- `agent/`: Go program running on the PC (API + embedded tablet app), a single `.exe`.
-- `web/`: tablet app (React + Vite + Swiper), installable as a PWA. Available in English and French.
-- `hub/`: optional central server, hosted at home, that finds every PC running deckpad on the local network (work in progress).
+- `hub/`: central server, hosted on an always-on machine at home. It finds the PCs running deckpad on the local network, serves the tablet app and relays its requests to the chosen PC. Docker image or single binary.
+- `agent/`: Go program running on each PC (Windows or Linux), a single `.exe`. It only exposes an API to the hub.
+- `web/`: tablet app (React + Vite + Swiper), embedded in the hub, installable as a PWA. Available in English and French.
 
 ## Preview
 
@@ -28,12 +28,43 @@ On phones too:
 
 ## Usage
 
-1. Run `deckpad.exe` on the PC. It shows the address to open (e.g. `http://192.168.1.20:8420`).
-2. Open that address on the tablet, then "Add to Home screen".
+1. Start the hub on the home server (see below). It shows its address, e.g. `http://192.168.1.10:8430`.
+2. Run `deckpad.exe` on each PC. Nothing to configure: the hub finds it on its own.
+3. Open the hub's address on the tablet, pick a PC and type the 6-digit code shown on that PC's screen.
+
+### Start the hub
+
+With Docker, from the `hub/` folder:
+
+```
+docker compose up -d
+```
+
+The container uses the host network (`network_mode: host`), otherwise it can't hear the PCs' announcements. Pairings and the certificate are kept in a Docker volume. Without Docker: `cd hub && go run .` (Linux or Windows), data in `~/.config/deckpad-hub` (`%APPDATA%\deckpad-hub` on Windows), or `-data <folder>`.
+
+The hub listens on port 8430 (HTTP) and 8431 (HTTPS). Open them in the server's firewall if needed (on NixOS: `networking.firewall.allowedTCPPorts = [ 8430 8431 ];`).
+
+### How PCs are found
+
+Each agent announces itself over mDNS (`_deckpad._tcp`), like printers do. The hub lists them, and PCs already paired stay listed (greyed out) while they are off.
+
+- A PC disappears from the list about a minute after deckpad stops.
+- Each agent keeps a stable id in `agent-id`, next to `devices.json`, so a PC whose address changes isn't listed twice.
+- `-announce=false` on the agent turns the announcement off. If the Windows firewall asks, allow deckpad on private networks.
+
+### Pair
+
+Picking a PC that isn't paired yet opens a keypad on the tablet and a small window on the PC with a 6-digit code (also printed in the console). That one code does two things: it lets the tablet use the hub (the first time), and gives the hub a key to that PC. Other tablets pair the same way, with any PC's code.
+
+- The code expires after 5 minutes and locks after 5 wrong attempts.
+- The hub talks to each PC over HTTPS. The agent creates its own certificate on first launch (`agent.crt`, valid 20 years). The hub remembers its fingerprint at pairing and then refuses any other certificate, like SSH does: nothing to install on the PC or the tablet for this part.
+- The PC only keeps the fingerprint of the hub's key, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs the hub; it then asks for a new code.
+- The window opens with Edge or Chrome (Chromium on Linux), otherwise in the default browser.
+- To switch PC: the button with the PC's name at the bottom, or Settings on a phone.
 
 ### Install the app on the tablet (PWA)
 
-Browsers only install a real app (full screen, icon, cache) over HTTPS. So deckpad also serves the app over HTTPS on port 8421, with its own certificate.
+Browsers only install a real app (full screen, icon, cache) over HTTPS. So the hub also serves the app over HTTPS on port 8431, with its own certificate.
 
 Right after pairing, the tablet offers to switch to a secure connection, in 3 steps (only once):
 
@@ -43,40 +74,14 @@ Right after pairing, the tablet offers to switch to a secure connection, in 3 st
 
 Good to know:
 
-- On first launch, deckpad creates its own small certificate authority in `%APPDATA%\deckpad` (Windows) or `~/.config/deckpad` (Linux): `ca.crt` and `ca.key`. The key never leaves the PC. It can only sign local network addresses, so it would be useless to impersonate another website.
-- If the PC's address changes, the certificate is regenerated automatically, with nothing to reinstall on the tablet.
+- On first launch, the hub creates its own small certificate authority in its data folder: `ca.crt` and `ca.key`. The key never leaves the server. It can only sign local network addresses, so it would be useless to impersonate another website.
+- If the server's address changes, the certificate is regenerated automatically, with nothing to reinstall on the tablet.
 - Android then shows "network may be monitored": this is normal after installing a certificate.
 - `-https-addr ""` disables HTTPS. In development mode, HTTPS serves the built app: run `npm run build` before testing this step.
 
-Without a certificate, on Android, you can also enable `chrome://flags/#unsafely-treat-insecure-origin-as-secure` with the PC's HTTP address, then install the app.
+Without a certificate, on Android, you can also enable `chrome://flags/#unsafely-treat-insecure-origin-as-secure` with the hub's HTTP address, then install the app.
 
-### Pair a tablet
-
-As long as no tablet is paired, the PC opens a small window at launch with a QR code of the address to open. The tablet then shows a keypad and the window a 6-digit code (also printed in the console). Type that code on the tablet: it receives a key and won't have to do it again.
-
-- The code expires after 5 minutes and locks after 5 wrong attempts.
-- Each device has its own key. The PC only keeps its fingerprint, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs everything.
-- The window opens with Edge or Chrome (Chromium on Linux), otherwise in the default browser.
-
-## Central server (hub)
-
-Work in progress. The hub runs on an always-on machine at home and lists the PCs running deckpad on the same network, with nothing to configure: each agent announces itself over mDNS (`_deckpad._tcp`), like printers do. For now it only shows that list on `http://<server>:8430`; the tablet app will connect through it later.
-
-With Docker (from the `hub/` folder):
-
-```
-docker compose up -d
-```
-
-The container uses the host network (`network_mode: host`), otherwise it can't hear the mDNS announcements. Without Docker: `cd hub && go run .` (Linux or Windows).
-
-Good to know:
-
-- A PC disappears from the list about a minute after deckpad stops.
-- Each agent keeps a stable id in `agent-id`, next to `devices.json`, so a PC whose address changes isn't listed twice.
-- `-announce=false` on the agent turns the announcement off. If the Windows firewall asks, allow deckpad on private networks.
-
-## Build the exe
+## Build
 
 Requirements: [Go](https://go.dev/dl/) and [Node.js](https://nodejs.org/).
 
@@ -85,18 +90,19 @@ Requirements: [Go](https://go.dev/dl/) and [Node.js](https://nodejs.org/).
 ./build.sh       # macOS / Linux
 ```
 
-Output: `bin/deckpad.exe`.
+Output: `bin/deckpad.exe` (agent for Windows) and the hub (`bin/deckpad-hub`, app included); `build.sh` also builds the Linux agent `bin/deckpad`. Docker image: `docker build -f hub/Dockerfile -t deckpad-hub .` from the repository root.
 
 ## Develop
 
-Two terminals:
+Three terminals:
 
 ```
-cd agent && go run .        # API on :8420
+cd agent && go run .        # API on :8421 (HTTPS), for the hub
+cd hub && go run .          # finds the agent, relays the API, on :8430
 cd web && npm install && npm run dev
 ```
 
-Open the address shown by Vite (on the PC or the tablet). The app reloads on every save and `/api` calls are proxied to the agent.
+Open the address shown by Vite (on the PC or the tablet). The app reloads on every save and `/api` calls are proxied to the hub, which relays them to the chosen PC (`/api/pc/<id>/…` → `/api/…` of the agent).
 
 App texts: `web/src/i18n/en.ts` and `web/src/i18n/fr.ts` (react-i18next). A text added in one language must also be added in the other: the build fails otherwise.
 
