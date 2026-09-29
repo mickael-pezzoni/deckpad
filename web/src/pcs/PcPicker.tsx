@@ -23,7 +23,7 @@ export function PcPicker({ current, onPick }: Props) {
       })
     load()
     // Un PC qu'on vient d'allumer apparaît tout seul.
-    const timer = setInterval(() => document.hidden || load(), 5000)
+    const timer = setInterval(() => document.hidden || load(), 3000)
     return () => {
       alive = false
       clearInterval(timer)

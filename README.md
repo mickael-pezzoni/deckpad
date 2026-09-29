@@ -50,7 +50,7 @@ The hub listens on port 8430 (HTTP) and 8431 (HTTPS). Open them in the server's 
 
 Each agent announces itself over mDNS (`_deckpad._tcp`), like printers do. The hub lists them, and PCs already paired stay listed (greyed out) while they are off.
 
-- A PC disappears from the list about a minute after deckpad stops.
+- A new PC shows up within about 10 seconds, and disappears about 30 seconds after deckpad stops.
 - Each agent keeps a stable id in `agent-id`, next to `devices.json`, so a PC whose address changes isn't listed twice.
 - `-announce=false` on the agent turns the announcement off. If the Windows firewall asks, allow deckpad on private networks.
 
