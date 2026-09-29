@@ -153,7 +153,7 @@ function FileTile({ entry }: { entry: Entry }) {
   const { t } = useTranslation()
   const kind = fileKind(entry.name)
   return (
-    <Tile label={t(`files.kinds.${kind}`)} icon={FILE_ICONS[kind]} detail={formatBytes(entry.size)}>
+    <Tile className={`file-${kind}`} label={t(`files.kinds.${kind}`)} icon={FILE_ICONS[kind]} detail={formatBytes(entry.size)}>
       {entry.name}
     </Tile>
   )

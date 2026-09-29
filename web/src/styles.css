@@ -13,6 +13,14 @@
   --critical-text: #f5b8b5;
   --soft: rgb(255 255 255 / 0.06); /* fond d'une pastille posée sur une tuile */
   --scrim: rgb(0 0 0 / 0.6); /* voile derrière une fenêtre de confirmation */
+  /* Couleur de l'icône selon le type de fichier (page Fichiers). */
+  --file-image: #3cc47a;
+  --file-video: #e8618c;
+  --file-audio: #a57cf0;
+  --file-document: #e0b23f;
+  --file-archive: #e08a3c;
+  --file-program: #3cbcc4;
+  --file-code: #a3c43c;
   --gap: 24px;
   --radius: 20px;
   color-scheme: dark;
@@ -34,6 +42,13 @@
   --critical-text: #9c2420;
   --soft: rgb(0 0 0 / 0.05);
   --scrim: rgb(20 24 32 / 0.45);
+  --file-image: #1f9a55;
+  --file-video: #c93a6a;
+  --file-audio: #7a4fd0;
+  --file-document: #a87a0c;
+  --file-archive: #c0621a;
+  --file-program: #13909a;
+  --file-code: #5f7f0e;
   color-scheme: light;
 }
 
@@ -272,8 +287,8 @@ body,
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--icon, var(--accent)) 16%, transparent);
+  color: var(--icon, var(--accent));
 }
 
 /* Niveau de consommation : fond légèrement teinté + badge texte (jamais la couleur seule). */
@@ -594,6 +609,39 @@ body,
   font-size: 20px;
   line-height: 1.25;
   -webkit-line-clamp: 3;
+}
+
+/* Tuile de fichier : l'icône prend la couleur de son type. */
+.file-image {
+  --icon: var(--file-image);
+}
+
+.file-video {
+  --icon: var(--file-video);
+}
+
+.file-audio {
+  --icon: var(--file-audio);
+}
+
+.file-document {
+  --icon: var(--file-document);
+}
+
+.file-archive {
+  --icon: var(--file-archive);
+}
+
+.file-program {
+  --icon: var(--file-program);
+}
+
+.file-code {
+  --icon: var(--file-code);
+}
+
+.file-file {
+  --icon: var(--muted);
 }
 
 .grid-files.is-loading {
