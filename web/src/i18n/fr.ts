@@ -80,6 +80,7 @@ export const fr = {
     almostFull: 'Presque plein',
     empty: 'Dossier vide',
     folder: 'Dossier',
+    recent: 'Récents',
     more: '+ {{n}} éléments non affichés',
     kinds: {
       image: 'Image',

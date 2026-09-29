@@ -53,6 +53,7 @@ func New(store *auth.Store, keys *shortcuts.Store, sec *Secure) http.Handler {
 	mux.HandleFunc("POST /api/system/{action}", handleSystem)
 	mux.HandleFunc("GET /api/files/drives", handleDrives)
 	mux.HandleFunc("GET /api/files/list", handleList)
+	mux.HandleFunc("GET /api/files/recent", handleRecent)
 	mux.Handle("GET /api/audio/stream", stream(live.NewHub(time.Second, audio.Collect)))
 	mux.HandleFunc("POST /api/audio/volume", handleAudioVolume)
 	mux.HandleFunc("POST /api/audio/mute", handleAudioMute)
@@ -109,6 +110,15 @@ func handleDrives(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, drives)
+}
+
+func handleRecent(w http.ResponseWriter, r *http.Request) {
+	recents, err := files.Recents(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, recents)
 }
 
 func handleList(w http.ResponseWriter, r *http.Request) {

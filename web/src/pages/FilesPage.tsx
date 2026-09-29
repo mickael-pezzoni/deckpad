@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { Tile } from '../components/Tile'
 import { Loader } from '../components/Loader'
 import { UsageBar } from '../components/UsageBar'
+import { SideScroll } from '../components/SideScroll'
 import { usePageActive } from '../layout/pageActive'
 import { formatBytes } from '../format'
 import { FILE_ICONS, fileKind } from '../files/fileKind'
 
 type Drive = { path: string; name: string; total: number; used: number; removable: boolean }
 type Entry = { name: string; dir: boolean; size: number }
+type Recent = { name: string; path: string; folder: string; size: number; used: number }
 type Listing = { path: string; parent: string; entries: Entry[]; truncated: number }
 
 // Au-delà, le disque est signalé « presque plein ».
@@ -21,6 +23,7 @@ export function FilesPage() {
   const active = usePageActive()
   const [drives, setDrives] = useState<Drive[] | null>(null)
   const [drivesError, setDrivesError] = useState(false)
+  const [recents, setRecents] = useState<Recent[]>([])
   const [drive, setDrive] = useState<Drive | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(false)
@@ -59,6 +62,10 @@ export function FilesPage() {
         setDrivesError(false)
       })
       .catch(() => setDrivesError(true))
+    fetch('/api/files/recent')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setRecents)
+      .catch(() => setRecents([]))
   }, [active, drive])
 
   // Retour sur la page : le dossier affiché peut avoir changé.
@@ -71,6 +78,15 @@ export function FilesPage() {
     setDrive(d)
     setListing(null)
     open(d.path, () => setDrive(null))
+  }
+
+  // Fichier récent : on ouvre le dossier qui le contient, sur son disque.
+  function openRecent(f: Recent) {
+    const d = driveOf(drives ?? [], f.folder)
+    if (!d) return
+    setDrive(d)
+    setListing(null)
+    open(f.folder, () => setDrive(null))
   }
 
   function closeDrive() {
@@ -111,6 +127,16 @@ export function FilesPage() {
             )
           })}
         </div>
+        {recents.length > 0 && (
+          <section className="files-recent">
+            <h2 className="files-recent-title">{t('files.recent')}</h2>
+            <SideScroll className="files-recent-row">
+              {recents.map((f) => (
+                <FileTile key={f.path} entry={{ name: f.name, dir: false, size: f.size }} onClick={() => openRecent(f)} />
+              ))}
+            </SideScroll>
+          </section>
+        )}
         {toast}
       </>
     )
@@ -149,11 +175,11 @@ export function FilesPage() {
   )
 }
 
-function FileTile({ entry }: { entry: Entry }) {
+function FileTile({ entry, onClick }: { entry: Entry; onClick?: () => void }) {
   const { t } = useTranslation()
   const kind = fileKind(entry.name)
   return (
-    <Tile className={`file-${kind}`} label={t(`files.kinds.${kind}`)} icon={FILE_ICONS[kind]} detail={formatBytes(entry.size)}>
+    <Tile className={`file-${kind}`} label={t(`files.kinds.${kind}`)} icon={FILE_ICONS[kind]} detail={formatBytes(entry.size)} onClick={onClick}>
       {entry.name}
     </Tile>
   )
@@ -162,6 +188,18 @@ function FileTile({ entry }: { entry: Entry }) {
 // « C:\ » → « C: » ; sous Linux, le point de montage tel quel.
 function driveLabel(path: string) {
   return /^[A-Z]:\\$/i.test(path) ? path.slice(0, 2) : path
+}
+
+// Disque qui contient path : le plus précis si des montages sont imbriqués (/ et /home).
+function driveOf(drives: Drive[], path: string) {
+  const lower = path.toLowerCase()
+  return drives
+    .filter((d) => {
+      const root = d.path.toLowerCase()
+      const sep = separator(root)
+      return lower === root || lower.startsWith(root.endsWith(sep) ? root : root + sep)
+    })
+    .sort((a, b) => b.path.length - a.path.length)[0]
 }
 
 function separator(path: string) {

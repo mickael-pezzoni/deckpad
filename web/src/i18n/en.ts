@@ -82,6 +82,7 @@ export const en: Messages = {
     almostFull: 'Almost full',
     empty: 'Empty folder',
     folder: 'Folder',
+    recent: 'Recent',
     more: '+ {{n}} more items not shown',
     kinds: {
       image: 'Image',
