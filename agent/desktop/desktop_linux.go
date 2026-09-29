@@ -7,13 +7,18 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-// Open ouvre un dossier, un fichier ou une adresse avec l'appli associée.
-func Open(target string) error { return startDetached("xdg-open", target) }
+// Open ouvre un dossier, un fichier ou une adresse avec l'appli associée,
+// au premier plan si le bureau le permet.
+func Open(target string) error { return openRaised("xdg-open", target) }
 
 // Reveal montre le fichier dans le gestionnaire de fichiers (Nautilus, Dolphin,
 // Nemo… via l'interface FileManager1). À défaut, ouvre simplement son dossier.
 func Reveal(path string) error {
+	before := x11Windows()
 	if showItem(path) == nil {
+		if before != nil {
+			go raise(before)
+		}
 		return nil
 	}
 	return Open(filepath.Dir(path))

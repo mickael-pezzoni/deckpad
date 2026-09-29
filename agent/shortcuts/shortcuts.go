@@ -135,7 +135,7 @@ func (s *Store) Run(id string) error {
 	case KindKeys:
 		return sendKeys(sc.Keys)
 	case KindLaunch:
-		return launch(sc.Command)
+		return desktop.Launch(func() error { return launch(sc.Command) })
 	case KindOpen:
 		return desktop.Open(expandHome(sc.Target))
 	case KindCapture:
