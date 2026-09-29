@@ -694,7 +694,7 @@ body,
   margin-bottom: 24px;
 }
 
-.files-back {
+.icon-button {
   display: grid;
   flex: none;
   place-items: center;
@@ -707,7 +707,7 @@ body,
   cursor: pointer;
 }
 
-.files-back:active {
+.icon-button:active {
   background: var(--tile-active);
 }
 

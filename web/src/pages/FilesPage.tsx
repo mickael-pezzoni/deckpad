@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Folder, HardDrive, Usb } from 'lucide-react'
+import { ArrowLeft, Folder, HardDrive, House, Usb } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tile } from '../components/Tile'
+import { IconButton } from '../components/IconButton'
 import { Loader } from '../components/Loader'
 import { UsageBar } from '../components/UsageBar'
 import { SideScroll } from '../components/SideScroll'
@@ -145,9 +146,8 @@ export function FilesPage() {
   return (
     <>
       <div className="files-bar">
-        <button type="button" className="files-back" onClick={back} aria-label={t('common.back')}>
-          <ArrowLeft size={28} aria-hidden />
-        </button>
+        <IconButton icon={ArrowLeft} label={t('common.back')} onClick={back} />
+        <IconButton icon={House} label={t('files.drives')} onClick={closeDrive} />
         <span className="files-path">{breadcrumb(drive, listing?.path ?? drive.path)}</span>
       </div>
       {loading && !listing ? (

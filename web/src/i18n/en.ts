@@ -75,6 +75,7 @@ export const en: Messages = {
     holdToClose: 'Press and hold to close',
   },
   files: {
+    drives: 'All drives',
     denied: 'Access to this folder denied',
     notFound: 'Folder not found',
     noDrive: 'No drive found',
