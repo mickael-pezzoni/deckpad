@@ -120,7 +120,7 @@ App texts: `web/src/i18n/en.ts` and `web/src/i18n/fr.ts` (react-i18next). A text
 | PC info | ✅ |
 | Stats | ✅ CPU, RAM, GPU of any brand (FPS and AMD GPU temperature on Windows to come) |
 | Processes | ✅ user applications, sort by CPU/RAM, close with a long press |
-| Files | ✅ drives and USB sticks, folder browsing, favorites; long press a file for a radial menu: open on the PC, download to the tablet, favorite, show in folder |
+| Files | ✅ drives and USB sticks, folder browsing, favorites; long press a file for a radial menu: open on the PC, download to the tablet, favorite, show in folder, send to another paired PC (lands in its Downloads, renamed "name (1)" if taken; the hub copies it PC to PC) |
 | Network | ✅ live throughput, latency, local and public IP, connection type |
 | Audio | ✅ master and per-app volume, microphone, output choice (headset, speakers…). On Linux: `pactl` required (ships with PulseAudio / PipeWire) |
 | Media | ✅ title, artist, cover, play/pause, next/previous (Spotify, YouTube in the browser, VLC…). Windows 10 1809+; on Linux, any MPRIS-compatible player |

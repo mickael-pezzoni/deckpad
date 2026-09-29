@@ -5,6 +5,7 @@ package files
 import (
 	"bufio"
 	"encoding/xml"
+	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -66,9 +67,34 @@ func dataHome() string {
 // userFolders : les dossiers XDG (« Bureau », « Téléchargements »… selon la
 // langue) lus dans user-dirs.dirs, ou leurs noms anglais par défaut.
 func userFolders() []string {
+	dirs, home := xdgDirs()
+	var out []string
+	for _, key := range []string{"DESKTOP", "DOCUMENTS", "DOWNLOAD", "PICTURES", "VIDEOS", "MUSIC"} {
+		if dir, ok := dirs[key]; ok && dir != home { // un dossier XDG désactivé pointe sur le dossier personnel
+			out = append(out, dir)
+		}
+	}
+	return out
+}
+
+// downloadsDir : le dossier Téléchargements, créé s'il n'existe pas encore.
+func downloadsDir() (string, error) {
+	dirs, home := xdgDirs()
+	dir, ok := dirs["DOWNLOAD"]
+	if !ok || dir == home {
+		if home == "" {
+			return "", errors.New("dossier personnel introuvable")
+		}
+		dir = filepath.Join(home, "Downloads")
+	}
+	return dir, os.MkdirAll(dir, 0o755)
+}
+
+// xdgDirs renvoie les dossiers XDG en chemins absolus, et le dossier personnel.
+func xdgDirs() (map[string]string, string) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return nil
+		return nil, ""
 	}
 	dirs := map[string]string{
 		"DESKTOP": "Desktop", "DOCUMENTS": "Documents", "DOWNLOAD": "Downloads",
@@ -86,17 +112,12 @@ func userFolders() []string {
 		}
 		f.Close()
 	}
-	var out []string
-	for _, key := range []string{"DESKTOP", "DOCUMENTS", "DOWNLOAD", "PICTURES", "VIDEOS", "MUSIC"} {
-		dir := dirs[key]
+	for key, dir := range dirs {
 		if !filepath.IsAbs(dir) {
-			dir = filepath.Join(home, dir)
-		}
-		if dir != home { // un dossier XDG désactivé pointe sur le dossier personnel
-			out = append(out, dir)
+			dirs[key] = filepath.Join(home, dir)
 		}
 	}
-	return out
+	return dirs, home
 }
 
 // parseUserDirs lit les lignes XDG_DOWNLOAD_DIR="$HOME/Téléchargements".

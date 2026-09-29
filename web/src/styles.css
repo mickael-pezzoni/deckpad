@@ -524,6 +524,32 @@ body,
   font-size: 18px;
 }
 
+/* Envoi d'un fichier vers un autre PC : le message et une barre d'avancement. */
+.toast-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: min(360px, calc(100vw - 32px));
+}
+
+.toast-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast-progress-row .usage-bar {
+  flex: 1;
+  background: var(--tile);
+}
+
+.toast-progress-pct {
+  min-width: 3.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 /* Page Système : 4 très gros boutons qui remplissent l'écran. */
 .actions {
   display: grid;
@@ -3279,6 +3305,21 @@ body,
 
 .radial-label:empty {
   display: none;
+}
+
+/* Sous-menu ouvert : l'option d'origine au centre, pour y revenir. */
+.radial-center {
+  position: absolute;
+  left: -26px;
+  top: -26px;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--tile-active);
+  color: var(--muted);
+  animation: radial-pop 0.18s ease-out;
 }
 
 /* Point de départ du doigt. */

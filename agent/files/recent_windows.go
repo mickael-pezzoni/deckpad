@@ -54,3 +54,12 @@ func userFolders() []string {
 	}
 	return dirs
 }
+
+// downloadsDir : le dossier Téléchargements, là où Windows le place vraiment.
+func downloadsDir() (string, error) {
+	dir, err := windows.KnownFolderPath(windows.FOLDERID_Downloads, 0)
+	if err != nil {
+		return "", err
+	}
+	return dir, os.MkdirAll(dir, 0o755)
+}

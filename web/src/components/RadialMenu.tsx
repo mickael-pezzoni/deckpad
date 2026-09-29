@@ -10,7 +10,11 @@ export type RadialItem = {
   label: string
   icon: LucideIcon
   active?: boolean // option « allumée », ex. déjà en favori
-  onSelect: () => void
+  onSelect?: () => void
+  // Sous-menu : viser l'option remplace le cercle par ces options-là ;
+  // revenir au centre ramène le cercle de départ.
+  children?: RadialItem[]
+  emptyLabel?: string // affiché quand le sous-menu est vide
 }
 
 const HOLD_MS = 450
@@ -18,17 +22,21 @@ const SLOP = 10 // au-delà, c'est un glissement (page, défilement) : pas de me
 const DEAD_ZONE = 30 // relâcher aussi près du point de départ annule
 const MARGIN = 16
 const LABEL = 48 // hauteur réservée au nom de l'option visée
+const SUB_SLOP = 24 // après l'ouverture d'un sous-menu, il faut bouger un peu avant de viser
 
 type Open = { x: number; y: number; cx: number; cy: number; radius: number; size: number }
 
 // Menu circulaire : un appui long ouvre les options en cercle autour du doigt.
 // On glisse vers une option (elle grossit), on relâche pour la choisir ; relâcher
 // au centre annule. Pendant le geste, les pages ne glissent plus et rien ne défile.
+// Une option avec des sous-options les affiche à la place du cercle dès que le
+// doigt l'atteint (sans le lever), et le centre ramène au cercle de départ.
 // Renvoie les gestionnaires à poser sur l'élément et le menu à afficher.
-export function useRadialMenu(items: RadialItem[], onPress?: () => void) {
+export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?: () => void) {
   const phone = useMediaQuery('(max-width: 560px)')
   const [open, setOpen] = useState<Open | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
+  const [sub, setSub] = useState<number | null>(null) // option dont le sous-menu est ouvert
   const timer = useRef<number | undefined>(undefined)
   const start = useRef<{ x: number; y: number } | null>(null)
   const fired = useRef(false)
@@ -56,21 +64,53 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void) {
     fired.current = true
     setOpen(menu)
     setSelected(null)
+    setSub(null)
     lockSwipe(true)
     navigator.vibrate?.(10)
+    onOpen?.()
 
     let current: number | null = null
-    const track = (px: number, py: number) => {
-      const next = pick(menu, itemsRef.current.length, px, py)
+    let parent: number | null = null
+    let entry: { x: number; y: number } | null = null // où le doigt était à l'ouverture du sous-menu
+    const visible = () => (parent === null ? itemsRef.current : (itemsRef.current[parent]?.children ?? []))
+    const select = (next: number | null) => {
       if (next === current) return
       current = next
       setSelected(next)
       if (next !== null) navigator.vibrate?.(5)
     }
+    const track = (px: number, py: number) => {
+      const fromStart = Math.hypot(px - menu.x, py - menu.y)
+      if (parent !== null) {
+        if (fromStart < DEAD_ZONE) {
+          // Retour au centre : le cercle de départ revient.
+          parent = null
+          setSub(null)
+          select(null)
+          return
+        }
+        if (entry && Math.hypot(px - entry.x, py - entry.y) < SUB_SLOP) return
+        entry = null
+        select(pick(menu, visible().length, px, py))
+        return
+      }
+      const next = pick(menu, itemsRef.current.length, px, py)
+      // Le sous-menu s'ouvre quand le doigt arrive vraiment sur l'option, pas dès qu'il part dans sa direction.
+      if (next !== null && itemsRef.current[next]?.children && fromStart >= menu.radius * 0.6) {
+        parent = next
+        entry = { x: px, y: py }
+        current = null
+        setSelected(null)
+        setSub(next)
+        navigator.vibrate?.(10)
+        return
+      }
+      select(next)
+    }
     const release = () => {
+      const item = current === null ? undefined : visible()[current]
       close()
-      const item = current === null ? undefined : itemsRef.current[current]
-      if (item) {
+      if (item?.onSelect && !item.children) {
         playClick()
         item.onSelect()
       }
@@ -118,6 +158,7 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void) {
     teardown.current = null
     setOpen(null)
     setSelected(null)
+    setSub(null)
     lockSwipe(false)
   }
 
@@ -152,6 +193,12 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void) {
     },
   }
 
+  const parentItem = sub === null ? undefined : items[sub]
+  const shown = parentItem ? (parentItem.children ?? []) : items
+  const label =
+    selected !== null ? shown[selected]?.label : parentItem ? (shown.length > 0 ? parentItem.label : parentItem.emptyLabel) : ''
+  const ParentIcon = parentItem?.icon
+
   const menu =
     open &&
     createPortal(
@@ -161,17 +208,23 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void) {
           style={{ left: open.cx, top: open.cy, '--radial-r': `${open.radius}px`, '--radial-size': `${open.size}px` } as CSSProperties}
         >
           <span className="radial-ring" />
-          {items.map((item, i) => {
-            const [dx, dy] = offset(i, items.length, open.radius)
+          {shown.map((item, i) => {
+            const [dx, dy] = offset(i, shown.length, open.radius)
             const Icon = item.icon
             const cls = ['radial-item', item.active && 'is-active', selected === i && 'is-selected'].filter(Boolean).join(' ')
             return (
-              <span key={item.id} className={cls} style={{ '--dx': `${dx}px`, '--dy': `${dy}px` } as CSSProperties}>
+              <span key={`${sub ?? ''}/${item.id}`} className={cls} style={{ '--dx': `${dx}px`, '--dy': `${dy}px` } as CSSProperties}>
                 <Icon size={phone ? 26 : 30} strokeWidth={2} fill={item.active ? 'currentColor' : 'none'} />
               </span>
             )
           })}
-          <span className="radial-label">{selected === null ? '' : items[selected]?.label}</span>
+          {ParentIcon && (
+            // Rappel de l'option ouverte, au centre : y revenir ramène le cercle de départ.
+            <span className="radial-center">
+              <ParentIcon size={phone ? 22 : 26} strokeWidth={2} />
+            </span>
+          )}
+          <span className="radial-label">{label ?? ''}</span>
           <span className="radial-origin" style={{ '--ox': `${open.x - open.cx}px`, '--oy': `${open.y - open.cy}px` } as CSSProperties} />
         </div>
       </div>,
@@ -190,6 +243,7 @@ function offset(i: number, n: number, radius: number): [number, number] {
 // Option visée : celle sous le doigt, sinon celle dans la direction du geste
 // (mesurée depuis le point de départ, qui peut être décalé du centre près d'un bord).
 function pick(menu: Open, n: number, x: number, y: number): number | null {
+  if (n === 0) return null
   for (let i = 0; i < n; i++) {
     const [dx, dy] = offset(i, n, menu.radius)
     if (Math.hypot(x - (menu.cx + dx), y - (menu.cy + dy)) <= menu.size / 2 + 8) return i
