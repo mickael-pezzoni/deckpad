@@ -3,24 +3,39 @@ package desktop
 import (
 	"os/exec"
 	"syscall"
-
-	"golang.org/x/sys/windows"
 )
 
 const swShowNormal = 1
 
-// Open ouvre un dossier, un fichier ou une adresse avec le programme associé.
+// Open ouvre un dossier, un fichier ou une adresse avec le programme associé,
+// au premier plan.
 func Open(target string) error {
-	verb, _ := windows.UTF16PtrFromString("open")
-	file, err := windows.UTF16PtrFromString(target)
+	before := shownWindows()
+	unlockForeground()
+	proc, err := shellOpen(target)
 	if err != nil {
 		return err
 	}
-	return windows.ShellExecute(0, verb, file, nil, nil, swShowNormal)
+	go raise(before, proc)
+	return nil
 }
 
-// Reveal ouvre l'Explorateur sur le dossier du fichier, le fichier sélectionné.
+// Launch lance un programme avec start, puis passe sa fenêtre au premier plan.
+func Launch(start func() error) error {
+	before := shownWindows()
+	unlockForeground()
+	if err := start(); err != nil {
+		return err
+	}
+	go raise(before, 0)
+	return nil
+}
+
+// Reveal ouvre l'Explorateur sur le dossier du fichier, le fichier sélectionné,
+// au premier plan.
 func Reveal(path string) error {
+	before := shownWindows()
+	unlockForeground()
 	cmd := exec.Command("explorer.exe")
 	// L'Explorateur veut « /select,"chemin" » tel quel : Go mettrait les
 	// guillemets autour de tout l'argument.
@@ -29,5 +44,7 @@ func Reveal(path string) error {
 		return err
 	}
 	go cmd.Wait() // explorer.exe renvoie 1 même quand tout va bien
+	// La fenêtre appartient à l'Explorateur déjà lancé, pas à ce processus.
+	go raise(before, 0)
 	return nil
 }
