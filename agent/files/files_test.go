@@ -3,6 +3,7 @@ package files
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -46,6 +47,22 @@ func TestSortEntries(t *testing.T) {
 	for i, name := range want {
 		if e[i].Name != name {
 			t.Fatalf("ordre = %v", e)
+		}
+	}
+}
+
+func TestIsFile(t *testing.T) {
+	cases := map[fs.FileMode]bool{
+		0:                 true,
+		fs.ModeIrregular:  true, // fichier OneDrive sous Windows
+		fs.ModeSocket:     false,
+		fs.ModeNamedPipe:  false,
+		fs.ModeDevice:     false,
+		fs.ModeCharDevice: false,
+	}
+	for mode, want := range cases {
+		if got := isFile(mode); got != want {
+			t.Errorf("isFile(%v) = %v", mode, got)
 		}
 	}
 }

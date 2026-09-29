@@ -13,10 +13,11 @@ type Props = {
   wide?: boolean
   badge?: { text: string; tone: Tone }
   onClick?: () => void
+  className?: string // variante propre à une page, ex. la couleur d'un type de fichier
 }
 
-export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wide, badge, onClick }: Props) {
-  const className = ['tile', wide && 'tile-wide', badge && `tile-${badge.tone}`, onClick && 'tile-button']
+export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wide, badge, onClick, className: extra }: Props) {
+  const className = ['tile', wide && 'tile-wide', badge && `tile-${badge.tone}`, onClick && 'tile-button', extra]
     .filter(Boolean)
     .join(' ')
   const content = (

@@ -99,8 +99,8 @@ func List(ctx context.Context, path string) (*Listing, error) {
 			e.Dir = target.IsDir()
 		}
 		if !e.Dir {
-			if !info.Mode().IsRegular() {
-				continue // sockets, périphériques… rien d'utile à montrer
+			if !isFile(info.Mode()) {
+				continue
 			}
 			e.Size = uint64(info.Size())
 		}
@@ -117,6 +117,13 @@ func List(ctx context.Context, path string) (*Listing, error) {
 		l.Parent = filepath.Dir(path)
 	}
 	return l, nil
+}
+
+// isFile écarte sockets, tubes et périphériques : rien d'utile à montrer.
+// Les fichiers « irréguliers » restent : sous Windows, Go marque ainsi les
+// points d'analyse comme les fichiers OneDrive (Bureau, Documents…).
+func isFile(mode fs.FileMode) bool {
+	return mode&(fs.ModeSocket|fs.ModeNamedPipe|fs.ModeDevice|fs.ModeCharDevice) == 0
 }
 
 // sortEntries : dossiers d'abord, puis ordre alphabétique sans tenir compte de la casse.
