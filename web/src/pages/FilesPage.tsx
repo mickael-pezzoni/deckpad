@@ -6,7 +6,6 @@ import { Tile } from '../components/Tile'
 import { IconButton } from '../components/IconButton'
 import { Loader } from '../components/Loader'
 import { UsageBar } from '../components/UsageBar'
-import { SideScroll } from '../components/SideScroll'
 import { usePageActive } from '../layout/pageActive'
 import { formatBytes } from '../format'
 import { FILE_ICONS, fileKind } from '../files/fileKind'
@@ -108,7 +107,7 @@ export function FilesPage() {
     if (!drives) return drivesError ? <p className="coming-soon">{t('common.unreachable')}</p> : <Loader />
     if (drives.length === 0) return <p className="coming-soon">{t('files.noDrive')}</p>
     return (
-      <>
+      <div className={recents.length > 0 ? 'files-home has-recent' : 'files-home'}>
         <div className="grid grid-drives">
           {drives.map((d) => {
             const pct = d.total > 0 ? (d.used / d.total) * 100 : 0
@@ -131,15 +130,15 @@ export function FilesPage() {
         {recents.length > 0 && (
           <section className="files-recent">
             <h2 className="files-recent-title">{t('files.recent')}</h2>
-            <SideScroll className="files-recent-row">
+            <div className="grid files-recent-grid">
               {recents.map((f) => (
                 <FileTile key={f.path} entry={{ name: f.name, dir: false, size: f.size }} onClick={() => openRecent(f)} />
               ))}
-            </SideScroll>
+            </div>
           </section>
         )}
         {toast}
-      </>
+      </div>
     )
   }
 
