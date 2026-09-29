@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "deckpad",
-  "short_name": "deckpad",
+  "name": "Deckpad",
+  "short_name": "Deckpad",
   "description": "Piloter son PC depuis la tablette",
   "lang": "fr",
   "start_url": "/",
