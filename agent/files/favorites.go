@@ -11,12 +11,13 @@ import (
 	"sync"
 )
 
-// Favorite est un fichier mis en favori depuis la tablette.
+// Favorite est un fichier ou un dossier mis en favori depuis la tablette.
 type Favorite struct {
 	Name   string `json:"name"`
 	Path   string `json:"path"`
-	Folder string `json:"folder"` // dossier qui le contient : c'est lui que la tablette ouvre
-	Size   uint64 `json:"size"`
+	Folder string `json:"folder"` // dossier que la tablette ouvre : celui qui contient le fichier, ou le dossier lui-même
+	Dir    bool   `json:"dir"`
+	Size   uint64 `json:"size"` // fichiers seulement
 }
 
 const maxFavorites = 50
@@ -31,6 +32,16 @@ type Favorites struct {
 	paths []string // du plus récent au plus ancien
 }
 
+// stored est le contenu de favorites.json. Home dit que le dossier utilisateur
+// a déjà été ajouté une fois : retiré ensuite, il ne revient pas.
+type stored struct {
+	Paths []string `json:"paths"`
+	Home  bool     `json:"home"`
+}
+
+// homeDir : le dossier utilisateur, remplacé dans les tests.
+var homeDir = os.UserHomeDir
+
 func DefaultFavoritesPath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
@@ -39,18 +50,37 @@ func DefaultFavoritesPath() (string, error) {
 	return filepath.Join(dir, "deckpad", "favorites.json"), nil
 }
 
-// OpenFavorites charge les favoris (fichier absent : aucun favori).
+// OpenFavorites charge les favoris. La première fois, le dossier utilisateur
+// (C:\Users\nom, /home/nom) y est ajouté.
 func OpenFavorites(path string) (*Favorites, error) {
 	f := &Favorites{path: path}
+	var st stored
 	b, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+	case err != nil:
+		return nil, err
+	case len(b) > 0 && b[0] == '[': // ancien format : la liste seule
+		if err := json.Unmarshal(b, &st.Paths); err != nil {
+			return nil, fmt.Errorf("%s illisible : %w", path, err)
+		}
+	default:
+		if err := json.Unmarshal(b, &st); err != nil {
+			return nil, fmt.Errorf("%s illisible : %w", path, err)
+		}
+	}
+	f.paths = st.Paths
+	if st.Home {
 		return f, nil
 	}
-	if err != nil {
-		return nil, err
+	if home, err := homeDir(); err == nil && home != "" {
+		home = filepath.Clean(home)
+		if !slices.ContainsFunc(f.paths, func(p string) bool { return pathKey(p) == pathKey(home) }) {
+			f.paths = append(f.paths, home)
+		}
 	}
-	if err := json.Unmarshal(b, &f.paths); err != nil {
-		return nil, fmt.Errorf("%s illisible : %w", path, err)
+	if err := f.save(f.paths); err != nil {
+		return nil, err
 	}
 	return f, nil
 }
@@ -64,8 +94,12 @@ func (f *Favorites) List(ctx context.Context) ([]Favorite, error) {
 
 	out := []Favorite{}
 	for _, p := range paths {
-		path, info, err := File(ctx, p)
+		path, info, err := Item(ctx, p)
 		if err != nil {
+			continue
+		}
+		if info.IsDir() {
+			out = append(out, Favorite{Name: filepath.Base(path), Path: path, Folder: path, Dir: true})
 			continue
 		}
 		out = append(out, Favorite{Name: filepath.Base(path), Path: path, Folder: filepath.Dir(path), Size: uint64(info.Size())})
@@ -73,10 +107,10 @@ func (f *Favorites) List(ctx context.Context) ([]Favorite, error) {
 	return out, nil
 }
 
-// Set ajoute (on) ou retire un fichier des favoris.
+// Set ajoute (on) ou retire un fichier ou un dossier des favoris.
 func (f *Favorites) Set(ctx context.Context, path string, on bool) error {
 	if on {
-		p, _, err := File(ctx, path)
+		p, _, err := Item(ctx, path)
 		if err != nil {
 			return err
 		}
@@ -102,7 +136,7 @@ func (f *Favorites) Set(ctx context.Context, path string, on bool) error {
 }
 
 func (f *Favorites) save(paths []string) error {
-	b, err := json.MarshalIndent(paths, "", "  ")
+	b, err := json.MarshalIndent(stored{Paths: paths, Home: true}, "", "  ")
 	if err != nil {
 		return err
 	}

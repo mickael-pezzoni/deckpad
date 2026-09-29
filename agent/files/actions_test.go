@@ -2,6 +2,7 @@ package files
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -51,6 +52,9 @@ func TestFavorites(t *testing.T) {
 	os.WriteFile(a, []byte("a"), 0o600)
 	os.WriteFile(b, []byte("bb"), 0o600)
 	store := filepath.Join(dir, "conf", "favorites.json")
+	old := homeDir
+	homeDir = func() (string, error) { return "", errors.New("pas de dossier utilisateur") }
+	t.Cleanup(func() { homeDir = old })
 
 	ctx := context.Background()
 	favs, err := OpenFavorites(store)
@@ -89,5 +93,71 @@ func TestFavorites(t *testing.T) {
 	}
 	if list, _ := favs.List(ctx); len(list) != 0 {
 		t.Errorf("favoris = %+v", list)
+	}
+}
+
+func TestFavoriteFoldersAndHome(t *testing.T) {
+	dir := t.TempDir()
+	onlyDrive(t, dir)
+	home := filepath.Join(dir, "home")
+	games := filepath.Join(dir, "jeux")
+	os.MkdirAll(home, 0o700)
+	os.MkdirAll(games, 0o700)
+	old := homeDir
+	homeDir = func() (string, error) { return home, nil }
+	t.Cleanup(func() { homeDir = old })
+	store := filepath.Join(dir, "conf", "favorites.json")
+
+	// Première ouverture : le dossier utilisateur est en favori.
+	ctx := context.Background()
+	favs, err := OpenFavorites(store)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, _ := favs.List(ctx)
+	if len(list) != 1 || list[0].Path != home || !list[0].Dir || list[0].Folder != home {
+		t.Fatalf("favoris = %+v", list)
+	}
+
+	// Un dossier s'ajoute comme un fichier.
+	if err := favs.Set(ctx, games, true); err != nil {
+		t.Fatal(err)
+	}
+	// Retiré, le dossier utilisateur ne revient pas.
+	if err := favs.Set(ctx, home, false); err != nil {
+		t.Fatal(err)
+	}
+	favs, err = OpenFavorites(store)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, _ = favs.List(ctx)
+	if len(list) != 1 || list[0].Path != games || !list[0].Dir || list[0].Name != "jeux" {
+		t.Fatalf("favoris = %+v", list)
+	}
+}
+
+func TestFavoritesOldFormat(t *testing.T) {
+	dir := t.TempDir()
+	onlyDrive(t, dir)
+	home := filepath.Join(dir, "home")
+	a := filepath.Join(dir, "a.txt")
+	os.MkdirAll(home, 0o700)
+	os.WriteFile(a, []byte("a"), 0o600)
+	old := homeDir
+	homeDir = func() (string, error) { return home, nil }
+	t.Cleanup(func() { homeDir = old })
+	store := filepath.Join(dir, "favorites.json")
+	b, _ := json.Marshal([]string{a})
+	os.WriteFile(store, b, 0o600)
+
+	// Favoris d'avant : gardés, le dossier utilisateur vient après.
+	favs, err := OpenFavorites(store)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, _ := favs.List(context.Background())
+	if len(list) != 2 || list[0].Path != a || list[1].Path != home {
+		t.Fatalf("favoris = %+v", list)
 	}
 }
