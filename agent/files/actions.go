@@ -21,6 +21,18 @@ var fileDrives = listDrives
 // File vérifie que path est un fichier visible sur l'un des disques et renvoie
 // son chemin nettoyé et ses informations.
 func File(ctx context.Context, path string) (string, fs.FileInfo, error) {
+	path, info, err := Item(ctx, path)
+	if err == nil && info.IsDir() {
+		err = ErrNotFile
+	}
+	if err != nil {
+		return "", nil, err
+	}
+	return path, info, nil
+}
+
+// Item est comme File mais accepte aussi un dossier.
+func Item(ctx context.Context, path string) (string, fs.FileInfo, error) {
 	if path == "" || !filepath.IsAbs(path) {
 		return "", nil, ErrOutside
 	}
@@ -40,15 +52,16 @@ func File(ctx context.Context, path string) (string, fs.FileInfo, error) {
 		return "", nil, ErrNotFound
 	case err != nil:
 		return "", nil, err
-	case info.IsDir() || !isFile(info.Mode()):
+	case !info.IsDir() && !isFile(info.Mode()):
 		return "", nil, ErrNotFile
 	}
 	return path, info, nil
 }
 
-// OpenOnPC ouvre le fichier sur le PC avec le programme associé.
+// OpenOnPC ouvre le fichier sur le PC avec le programme associé, ou le dossier
+// dans l'Explorateur (le gestionnaire de fichiers sous Linux).
 func OpenOnPC(ctx context.Context, path string) error {
-	path, _, err := File(ctx, path)
+	path, _, err := Item(ctx, path)
 	if err != nil {
 		return err
 	}
