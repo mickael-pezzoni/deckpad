@@ -398,12 +398,16 @@ func appHandler() http.Handler {
 		})
 	}
 	files := http.FileServerFS(dist)
+	manifest, index := namedManifest(dist), namedIndex(dist)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/manifest.webmanifest":
-			// Type absent de la table de Go (et du registre Windows) : on le donne nous-mêmes.
-			w.Header().Set("Content-Type", "application/manifest+json")
-		case "/sw.js", "/", "/index.html":
+			manifest(w, r)
+			return
+		case "/", "/index.html":
+			index(w, r)
+			return
+		case "/sw.js":
 			// Toujours revalider : une nouvelle version de l'exe doit arriver sur la tablette.
 			w.Header().Set("Cache-Control", "no-cache")
 		}
