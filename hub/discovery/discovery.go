@@ -23,9 +23,9 @@ const (
 	// Une recherche dure scanFor, puis on attend jusqu'à every. Un agent absent
 	// de plusieurs recherches de suite (maxAge) est retiré de la liste : un PC
 	// coupé brutalement n'envoie pas d'au revoir.
-	scanFor = 5 * time.Second
-	every   = 15 * time.Second
-	maxAge  = 50 * time.Second
+	scanFor = 3 * time.Second
+	every   = 8 * time.Second
+	maxAge  = 30 * time.Second
 
 	minVersion = 2
 )
