@@ -14,8 +14,6 @@ func sendKeys([]string) error { return errors.New("non pris en charge sur ce sys
 
 func launch(command string) error { return startDetached("sh", "-c", command) }
 
-func open(target string) error { return startDetached("open", target) }
-
 func defaults() []Shortcut {
 	return []Shortcut{
 		{ID: "home", Label: "Dossier personnel", Icon: "folder", Color: "orange", Kind: KindOpen, Target: "~"},

@@ -23,7 +23,6 @@ const (
 	keyEventKeyUp    = 0x0002
 	mapVKToScanCode  = 0
 	createNoWindow   = 0x08000000
-	swShowNormal     = 1
 )
 
 // keyboardInput + remplissage : même taille que la structure INPUT de Windows
@@ -113,16 +112,6 @@ func launch(command string) error {
 	}
 	go cmd.Wait()
 	return nil
-}
-
-// open ouvre un dossier, un fichier ou une adresse avec le programme associé.
-func open(target string) error {
-	verb, _ := windows.UTF16PtrFromString("open")
-	file, err := windows.UTF16PtrFromString(target)
-	if err != nil {
-		return err
-	}
-	return windows.ShellExecute(0, verb, file, nil, nil, swShowNormal)
 }
 
 func defaults() []Shortcut {

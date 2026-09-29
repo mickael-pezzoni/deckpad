@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 )
 
@@ -21,7 +22,11 @@ func TestPairingProtectsAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := New(store, keys)
+	favs, err := files.OpenFavorites(filepath.Join(t.TempDir(), "favorites.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := New(store, keys, favs)
 	do := func(method, target, body string, setup func(*http.Request)) *httptest.ResponseRecorder {
 		r := httptest.NewRequest(method, target, strings.NewReader(body)) // vient de 192.0.2.1 : le hub
 		if setup != nil {

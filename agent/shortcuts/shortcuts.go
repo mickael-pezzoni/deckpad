@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"unicode/utf8"
+
+	"github.com/mickael-pezzoni/deckpad/agent/desktop"
 )
 
 type Kind string
@@ -135,7 +137,7 @@ func (s *Store) Run(id string) error {
 	case KindLaunch:
 		return launch(sc.Command)
 	case KindOpen:
-		return open(expandHome(sc.Target))
+		return desktop.Open(expandHome(sc.Target))
 	case KindCapture:
 		return capture()
 	}

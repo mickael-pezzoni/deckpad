@@ -1,5 +1,6 @@
 // Package files liste les disques du PC et le contenu de leurs dossiers
-// (page « Fichiers »). Lecture seule : rien n'est ouvert, modifié ou supprimé.
+// (page « Fichiers »), et les actions sur un fichier (actions.go, favorites.go).
+// Rien n'est jamais modifié ni supprimé sur le PC.
 package files
 
 import (
