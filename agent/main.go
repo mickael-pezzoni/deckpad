@@ -6,8 +6,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/discovery"
 	"github.com/mickael-pezzoni/deckpad/agent/server"
 	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/tlscert"
@@ -17,6 +20,7 @@ import (
 func main() {
 	addr := flag.String("addr", ":8420", "adresse d'écoute (ex: :8420)")
 	tlsAddr := flag.String("https-addr", ":8421", "adresse d'écoute HTTPS (vide pour désactiver)")
+	announce := flag.Bool("announce", true, "s'annoncer sur le réseau local (mDNS) pour le serveur central")
 	flag.Parse()
 
 	_, port, err := net.SplitHostPort(*addr)
@@ -65,6 +69,10 @@ func main() {
 		log.Fatal(err)
 	}
 	logLocalURLs(port, sec.TLSPort)
+	// L'annonce dure autant que l'agent.
+	if *announce {
+		startAnnounce(port, sec.TLSPort)
+	}
 	// Aucune tablette encore : on affiche tout de suite le QR code à scanner.
 	if store.Empty() {
 		if err := window.Open("http://127.0.0.1:" + port + "/pair-code"); err != nil {
@@ -104,4 +112,35 @@ func logLocalURLs(port, tlsPort string) {
 			log.Printf("  et en sécurisé sur https://%s:%s", ipNet.IP, tlsPort)
 		}
 	}
+}
+
+// startAnnounce publie l'agent en mDNS. En cas d'échec (pare-feu, pas de
+// multicast), deckpad marche comme avant : seul le serveur central ne le voit pas.
+func startAnnounce(port, tlsPort string) *discovery.Announcer {
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		log.Printf("annonce mDNS : port %q invalide", port)
+		return nil
+	}
+	idPath, err := discovery.DefaultIDPath()
+	if err != nil {
+		log.Printf("annonce mDNS : %v", err)
+		return nil
+	}
+	id, err := discovery.LoadID(idPath)
+	if err != nil {
+		log.Printf("annonce mDNS : %v", err)
+		return nil
+	}
+	name, err := os.Hostname()
+	if err != nil || name == "" {
+		name = "deckpad"
+	}
+	a, err := discovery.Announce(name, id, p, tlsPort)
+	if err != nil {
+		log.Printf("annonce mDNS indisponible : %v", err)
+		return nil
+	}
+	log.Printf("annoncé sur le réseau local (mDNS) comme %q", name)
+	return a
 }

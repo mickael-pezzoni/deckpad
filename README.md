@@ -4,6 +4,7 @@ Control your PC from a tablet while you play: themed pages you swipe through, wi
 
 - `agent/`: Go program running on the PC (API + embedded tablet app), a single `.exe`.
 - `web/`: tablet app (React + Vite + Swiper), installable as a PWA. Available in English and French.
+- `hub/`: optional central server, hosted at home, that finds every PC running deckpad on the local network (work in progress).
 
 ## Preview
 
@@ -56,6 +57,24 @@ As long as no tablet is paired, the PC opens a small window at launch with a QR 
 - The code expires after 5 minutes and locks after 5 wrong attempts.
 - Each device has its own key. The PC only keeps its fingerprint, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs everything.
 - The window opens with Edge or Chrome (Chromium on Linux), otherwise in the default browser.
+
+## Central server (hub)
+
+Work in progress. The hub runs on an always-on machine at home and lists the PCs running deckpad on the same network, with nothing to configure: each agent announces itself over mDNS (`_deckpad._tcp`), like printers do. For now it only shows that list on `http://<server>:8430`; the tablet app will connect through it later.
+
+With Docker (from the `hub/` folder):
+
+```
+docker compose up -d
+```
+
+The container uses the host network (`network_mode: host`), otherwise it can't hear the mDNS announcements. Without Docker: `cd hub && go run .` (Linux or Windows).
+
+Good to know:
+
+- A PC disappears from the list about a minute after deckpad stops.
+- Each agent keeps a stable id in `agent-id`, next to `devices.json`, so a PC whose address changes isn't listed twice.
+- `-announce=false` on the agent turns the announcement off. If the Windows firewall asks, allow deckpad on private networks.
 
 ## Build the exe
 
