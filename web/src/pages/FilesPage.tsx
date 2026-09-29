@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Folder, HardDrive, Usb } from 'lucide-react'
+import { ArrowLeft, Folder, HardDrive, House, Usb } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tile } from '../components/Tile'
+import { IconButton } from '../components/IconButton'
 import { Loader } from '../components/Loader'
 import { UsageBar } from '../components/UsageBar'
-import { SideScroll } from '../components/SideScroll'
 import { usePageActive } from '../layout/pageActive'
 import { formatBytes } from '../format'
 import { FILE_ICONS, fileKind } from '../files/fileKind'
@@ -107,7 +107,7 @@ export function FilesPage() {
     if (!drives) return drivesError ? <p className="coming-soon">{t('common.unreachable')}</p> : <Loader />
     if (drives.length === 0) return <p className="coming-soon">{t('files.noDrive')}</p>
     return (
-      <>
+      <div className={recents.length > 0 ? 'files-home has-recent' : 'files-home'}>
         <div className="grid grid-drives">
           {drives.map((d) => {
             const pct = d.total > 0 ? (d.used / d.total) * 100 : 0
@@ -130,24 +130,23 @@ export function FilesPage() {
         {recents.length > 0 && (
           <section className="files-recent">
             <h2 className="files-recent-title">{t('files.recent')}</h2>
-            <SideScroll className="files-recent-row">
+            <div className="grid files-recent-grid">
               {recents.map((f) => (
                 <FileTile key={f.path} entry={{ name: f.name, dir: false, size: f.size }} onClick={() => openRecent(f)} />
               ))}
-            </SideScroll>
+            </div>
           </section>
         )}
         {toast}
-      </>
+      </div>
     )
   }
 
   return (
     <>
       <div className="files-bar">
-        <button type="button" className="files-back" onClick={back} aria-label={t('common.back')}>
-          <ArrowLeft size={28} aria-hidden />
-        </button>
+        <IconButton icon={ArrowLeft} label={t('common.back')} onClick={back} />
+        <IconButton icon={House} label={t('files.drives')} onClick={closeDrive} />
         <span className="files-path">{breadcrumb(drive, listing?.path ?? drive.path)}</span>
       </div>
       {loading && !listing ? (

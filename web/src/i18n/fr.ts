@@ -73,6 +73,7 @@ export const fr = {
     holdToClose: 'Maintenir appuyé pour fermer',
   },
   files: {
+    drives: 'Tous les disques',
     denied: 'Accès refusé à ce dossier',
     notFound: 'Dossier introuvable',
     noDrive: 'Aucun disque trouvé',
