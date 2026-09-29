@@ -15,7 +15,7 @@ import { api } from '../api'
 type Drive = { path: string; name: string; total: number; used: number; removable: boolean }
 type Entry = { name: string; dir: boolean; size: number }
 type Recent = { name: string; path: string; folder: string; size: number; used: number }
-type Favorite = { name: string; path: string; folder: string; size: number }
+type Favorite = { name: string; path: string; folder: string; dir: boolean; size: number }
 type Listing = { path: string; parent: string; entries: Entry[]; truncated: number }
 
 // Au-delà, le disque est signalé « presque plein ».
@@ -93,7 +93,8 @@ export function FilesPage() {
     open(d.path, () => setDrive(null))
   }
 
-  // Fichier récent ou favori : on ouvre le dossier qui le contient, sur son disque.
+  // Fichier récent ou favori : on ouvre le dossier qui le contient (ou le dossier
+  // mis en favori), sur son disque.
   function openRecent(f: { folder: string }) {
     const d = driveOf(drives ?? [], f.folder)
     if (!d) return
@@ -171,9 +172,13 @@ export function FilesPage() {
               <section className="files-recent files-favorites">
                 <h2 className="files-recent-title">{t('files.favorites')}</h2>
                 <div className="grid files-recent-grid">
-                  {favorites.map((f) => (
-                    <FileTile key={f.path} name={f.name} path={f.path} size={f.size} actions={fileActions} onClick={() => openRecent(f)} />
-                  ))}
+                  {favorites.map((f) =>
+                    f.dir ? (
+                      <FolderTile key={f.path} name={f.name} path={f.path} actions={fileActions} onClick={() => openRecent(f)} />
+                    ) : (
+                      <FileTile key={f.path} name={f.name} path={f.path} size={f.size} actions={fileActions} onClick={() => openRecent(f)} />
+                    ),
+                  )}
                 </div>
               </section>
             )}
@@ -209,9 +214,7 @@ export function FilesPage() {
         <div className={loading ? 'grid grid-files is-loading' : 'grid grid-files'}>
           {listing?.entries.map((e) =>
             e.dir ? (
-              <Tile key={e.name} label={t('files.folder')} icon={Folder} onClick={() => open(join(listing.path, e.name))}>
-                {e.name}
-              </Tile>
+              <FolderTile key={e.name} name={e.name} path={join(listing.path, e.name)} actions={fileActions} onClick={() => open(join(listing.path, e.name))} />
             ) : (
               <FileTile key={e.name} name={e.name} path={join(listing.path, e.name)} size={e.size} actions={fileActions} />
             ),
@@ -263,6 +266,37 @@ function FileTile({ name, path, size, actions, onClick }: { name: string; path: 
       {menu}
     </>
   )
+}
+
+// Tuile de dossier. Appui long : menu circulaire (ouvrir sur le PC, favori).
+function FolderTile({ name, path, actions, onClick }: { name: string; path: string; actions: FileActions; onClick: () => void }) {
+  const { t } = useTranslation()
+  const { bind, menu } = useRadialMenu([openItem(path, actions, t), favoriteItem(path, actions, t)], onClick)
+  return (
+    <>
+      <Tile label={t('files.folder')} icon={Folder} press={bind} onClick={bind.onClick}>
+        {name}
+      </Tile>
+      {menu}
+    </>
+  )
+}
+
+type T = ReturnType<typeof useTranslation>['t']
+
+function openItem(path: string, actions: FileActions, t: T): RadialItem {
+  return { id: 'open', label: t('files.actions.open'), icon: MonitorUp, onSelect: () => actions.run('open', path) }
+}
+
+function favoriteItem(path: string, actions: FileActions, t: T): RadialItem {
+  const favorite = actions.isFavorite(path)
+  return {
+    id: 'favorite',
+    label: t(favorite ? 'files.actions.unfavorite' : 'files.actions.favorite'),
+    icon: Star,
+    active: favorite,
+    onSelect: () => actions.run(favorite ? 'unfavorite' : 'favorite', path),
+  }
 }
 
 function post(path: string, body: unknown) {
