@@ -24,6 +24,7 @@ type transferReq struct {
 	From string `json:"from"`
 	To   string `json:"to"`
 	Path string `json:"path"`
+	Dir  string `json:"dir"` // dossier du PC cible ; vide : ses Téléchargements
 }
 
 type transferEvent struct {
@@ -86,7 +87,7 @@ func (s *Server) handleTransfer(w http.ResponseWriter, r *http.Request) {
 	var sent, total atomic.Int64
 	result := make(chan transferEvent, 1)
 	go func() {
-		name, err := s.transfer(context.WithoutCancel(r.Context()), src, dst, req.Path, &sent, &total)
+		name, err := s.transfer(context.WithoutCancel(r.Context()), src, dst, req.Path, req.Dir, &sent, &total)
 		if err != nil {
 			var te transferError
 			if !errors.As(err, &te) {
@@ -140,9 +141,9 @@ func (e endpoint) do(req *http.Request) (*http.Response, error) {
 	return (&http.Client{Transport: e.transport}).Do(req)
 }
 
-// transfer copie path de src vers le dossier Téléchargements de dst et renvoie
-// le nom sous lequel il y a été enregistré.
-func (s *Server) transfer(ctx context.Context, src, dst endpoint, path string, sent, total *atomic.Int64) (string, error) {
+// transfer copie path de src vers le dossier dir de dst (vide : Téléchargements)
+// et renvoie le nom sous lequel il y a été enregistré.
+func (s *Server) transfer(ctx context.Context, src, dst endpoint, path, dir string, sent, total *atomic.Int64) (string, error) {
 	get, err := http.NewRequestWithContext(ctx, http.MethodGet, src.base+"/api/files/download?path="+url.QueryEscape(path), nil)
 	if err != nil {
 		return "", err
@@ -164,7 +165,7 @@ func (s *Server) transfer(ctx context.Context, src, dst endpoint, path string, s
 	total.Store(max(in.ContentLength, 0))
 
 	put, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		dst.base+"/api/files/receive?name="+url.QueryEscape(baseName(path)), &counter{r: in.Body, n: sent})
+		dst.base+"/api/files/receive?"+url.Values{"name": {baseName(path)}, "dir": {dir}}.Encode(), &counter{r: in.Body, n: sent})
 	if err != nil {
 		return "", err
 	}
@@ -183,6 +184,8 @@ func (s *Server) transfer(ctx context.Context, src, dst endpoint, path string, s
 	case http.StatusOK:
 	case http.StatusForbidden:
 		return "", transferError("target-denied")
+	case http.StatusNotFound, http.StatusBadRequest:
+		return "", transferError("target-folder") // dossier supprimé ou déplacé depuis
 	default:
 		return "", errors.Join(transferError("target-failed"), agentStatus(out))
 	}

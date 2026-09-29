@@ -30,6 +30,12 @@ func fileAgent(t *testing.T, files map[string]string, got map[string]string) *ht
 	})
 	mux.HandleFunc("POST /api/files/receive", func(w http.ResponseWriter, r *http.Request) {
 		name := r.URL.Query().Get("name")
+		if dir := r.URL.Query().Get("dir"); dir == `D:\absent` {
+			http.Error(w, "introuvable", http.StatusNotFound)
+			return
+		} else if dir != "" {
+			name = dir + `\` + name
+		}
 		b, _ := io.ReadAll(r.Body)
 		if _, taken := got[name]; taken {
 			name = "copie " + name
@@ -93,6 +99,12 @@ func TestTransfer(t *testing.T) {
 	// Déjà présent : c'est l'agent cible qui choisit le nom, le hub le rapporte.
 	if _, events := send(`{"from":"pc1","to":"pc2","path":"C:\\Users\\m\\photo.jpg"}`); last(events).Name != "copie photo.jpg" {
 		t.Fatalf("renommage : %+v", events)
+	}
+	if _, events := send(`{"from":"pc1","to":"pc2","path":"C:\\Users\\m\\photo.jpg","dir":"D:\\Photos"}`); last(events).Name != `D:\Photos\photo.jpg` {
+		t.Fatalf("dossier choisi : %+v", events)
+	}
+	if _, events := send(`{"from":"pc1","to":"pc2","path":"C:\\Users\\m\\photo.jpg","dir":"D:\\absent"}`); last(events).Error != "target-folder" {
+		t.Fatalf("dossier cible absent : %+v", events)
 	}
 	if _, events := send(`{"from":"pc1","to":"pc2","path":"C:\\absent.txt"}`); last(events).Error != "not-found" {
 		t.Fatalf("fichier absent : %+v", events)
