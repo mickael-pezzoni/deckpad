@@ -113,9 +113,6 @@ func ydotoolArgs(keys []string) []string {
 
 func launch(command string) error { return startDetached("sh", "-c", command) }
 
-// open ouvre un dossier, un fichier ou une adresse avec l'appli associée.
-func open(target string) error { return startDetached("xdg-open", target) }
-
 func defaults() []Shortcut {
 	return []Shortcut{
 		{ID: "capture", Label: "Capture d'écran", Icon: "camera", Color: "blue", Kind: KindCapture},

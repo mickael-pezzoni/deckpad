@@ -2,11 +2,15 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/mickael-pezzoni/deckpad/agent/audio"
@@ -25,7 +29,7 @@ import (
 
 // New construit le routeur de l'API, appelée par le hub (l'appli est servie par le hub).
 // Seul le hub appairé dans store y accède.
-func New(store *auth.Store, keys *shortcuts.Store) http.Handler {
+func New(store *auth.Store, keys *shortcuts.Store, favs *files.Favorites) http.Handler {
 	procs := process.NewLister()
 
 	mux := http.NewServeMux()
@@ -44,6 +48,11 @@ func New(store *auth.Store, keys *shortcuts.Store) http.Handler {
 	mux.HandleFunc("GET /api/files/drives", handleDrives)
 	mux.HandleFunc("GET /api/files/list", handleList)
 	mux.HandleFunc("GET /api/files/recent", handleRecent)
+	mux.HandleFunc("GET /api/files/download", handleDownload)
+	mux.HandleFunc("POST /api/files/open", handleFileAction(files.OpenOnPC))
+	mux.HandleFunc("POST /api/files/reveal", handleFileAction(files.Reveal))
+	mux.HandleFunc("GET /api/files/favorites", handleFavorites(favs))
+	mux.HandleFunc("POST /api/files/favorites", handleFavoriteSet(favs))
 	mux.Handle("GET /api/audio/stream", stream(live.NewHub(time.Second, audio.Collect)))
 	mux.HandleFunc("POST /api/audio/volume", handleAudioVolume)
 	mux.HandleFunc("POST /api/audio/mute", handleAudioMute)
@@ -112,15 +121,91 @@ func handleRecent(w http.ResponseWriter, r *http.Request) {
 
 func handleList(w http.ResponseWriter, r *http.Request) {
 	l, err := files.List(r.Context(), r.URL.Query().Get("path"))
+	if err != nil {
+		filesError(w, err)
+		return
+	}
+	writeJSON(w, l)
+}
+
+// filesError traduit les erreurs du paquet files en codes HTTP.
+func filesError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, files.ErrOutside), errors.Is(err, files.ErrForbidden):
 		http.Error(w, err.Error(), http.StatusForbidden)
 	case errors.Is(err, files.ErrNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case err != nil:
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	case errors.Is(err, files.ErrNotFile), errors.Is(err, files.ErrTooMany):
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:
-		writeJSON(w, l)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// handleDownload envoie le fichier à la tablette, qui l'enregistre.
+func handleDownload(w http.ResponseWriter, r *http.Request) {
+	path, info, err := files.File(r.Context(), r.URL.Query().Get("path"))
+	if err != nil {
+		filesError(w, err)
+		return
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		filesError(w, err)
+		return
+	}
+	defer f.Close()
+	name := filepath.Base(path)
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))
+	log.Printf("téléchargement : %s", path)
+	http.ServeContent(w, r, name, info.ModTime(), f)
+}
+
+// handleFileAction : ouvrir le fichier sur le PC ou le montrer dans l'Explorateur.
+func handleFileAction(action func(context.Context, string) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Path string `json:"path"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "requête invalide", http.StatusBadRequest)
+			return
+		}
+		if err := action(r.Context(), req.Path); err != nil {
+			filesError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleFavorites(favs *files.Favorites) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		list, err := favs.List(r.Context())
+		if err != nil {
+			filesError(w, err)
+			return
+		}
+		writeJSON(w, list)
+	}
+}
+
+// handleFavoriteSet ajoute ou retire un favori, et renvoie la liste à jour.
+func handleFavoriteSet(favs *files.Favorites) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Path     string `json:"path"`
+			Favorite bool   `json:"favorite"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "requête invalide", http.StatusBadRequest)
+			return
+		}
+		if err := favs.Set(r.Context(), req.Path, req.Favorite); err != nil {
+			filesError(w, err)
+			return
+		}
+		handleFavorites(favs)(w, r)
 	}
 }
 

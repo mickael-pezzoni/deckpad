@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/mickael-pezzoni/deckpad/agent/desktop"
 )
 
 // Envois depuis la page « Presse-papiers » : ouvrir un lien ou taper un texte.
@@ -24,7 +26,7 @@ func OpenURL(raw string) error {
 	if err != nil {
 		return err
 	}
-	return open(u)
+	return desktop.Open(u)
 }
 
 // webURL vérifie une adresse web ; « exemple.fr/page » devient « https://exemple.fr/page ».

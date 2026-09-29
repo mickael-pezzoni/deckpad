@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { DOMAttributes, ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 export type Tone = 'warning' | 'critical'
@@ -14,9 +14,10 @@ type Props = {
   badge?: { text: string; tone: Tone }
   onClick?: () => void
   className?: string // variante propre à une page, ex. la couleur d'un type de fichier
+  press?: DOMAttributes<HTMLElement> // gestes en plus du clic, ex. l'appui long d'un menu
 }
 
-export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wide, badge, onClick, className: extra }: Props) {
+export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wide, badge, onClick, className: extra, press }: Props) {
   const className = ['tile', wide && 'tile-wide', badge && `tile-${badge.tone}`, onClick && 'tile-button', extra]
     .filter(Boolean)
     .join(' ')
@@ -45,10 +46,12 @@ export function Tile({ label, icon: Icon, iconImage, children, detail, chart, wi
     </>
   )
   return onClick ? (
-    <button type="button" className={className} onClick={onClick}>
+    <button type="button" className={className} {...press} onClick={onClick}>
       {content}
     </button>
   ) : (
-    <div className={className}>{content}</div>
+    <div className={className} {...press}>
+      {content}
+    </div>
   )
 }

@@ -6,6 +6,7 @@ import { pages } from './pages'
 import { AppShell } from './layout/AppShell'
 import { PageShell } from './layout/PageShell'
 import { swipeFromFields } from './layout/swipeFromFields'
+import { registerSwiper } from './layout/swipeLock'
 import { getStartPage } from './settings/startPage'
 import { PairingScreen } from './pairing/PairingScreen'
 import { SecureSetup } from './pairing/SecureSetup'
@@ -57,6 +58,7 @@ export default function App() {
   }, [])
 
   useEffect(swipeFromFields, [])
+  useEffect(() => registerSwiper(swiper), [swiper])
 
   const pick = (pc: PC) => setScreen(paired && pc.paired ? openPc(pc) : { kind: 'pair', pc })
 

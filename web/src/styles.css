@@ -611,12 +611,36 @@ body,
   -webkit-line-clamp: 3;
 }
 
-/* Fichiers récents : une rangée sous les disques, qui défile de côté. */
+/* Favoris et fichiers récents, à côté (ou sous) les disques. */
+.files-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+  min-height: 0;
+}
+
 .files-recent {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+}
+
+/* Favoris : juste la place qu'il leur faut, au plus la moitié ; les récents prennent le reste. */
+.files-favorites {
+  flex: 0 1 auto;
+  max-height: 50%;
+}
+
+.files-favorites:last-child {
+  flex: 1 1 0;
+  max-height: none;
+}
+
+.files-favorites .files-recent-grid {
+  grid-auto-rows: 160px;
 }
 
 .files-recent-title {
@@ -672,7 +696,7 @@ body,
     grid-auto-rows: 180px;
     max-height: 50%;
   }
-  .files-recent {
+  .files-side {
     flex: 1;
     margin-top: var(--gap);
   }
@@ -682,7 +706,8 @@ body,
   .files-home.has-recent .grid-drives {
     grid-auto-rows: 150px;
   }
-  .files-recent-grid {
+  .files-recent-grid,
+  .files-favorites .files-recent-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: 150px;
   }
@@ -3176,5 +3201,115 @@ body,
   .sidebar,
   .sidebar-scrim {
     transition: none;
+  }
+}
+
+/* Menu circulaire (appui long sur un fichier) : les options en cercle autour du
+   doigt, celle qu'on vise grossit. Posé au-dessus de tout, avec un voile. */
+.radial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--scrim);
+  animation: radial-fade 0.15s ease-out;
+  touch-action: none;
+}
+
+.radial {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.radial-ring {
+  position: absolute;
+  left: calc(var(--radial-r) * -1 - var(--radial-size) / 2 - 8px);
+  top: calc(var(--radial-r) * -1 - var(--radial-size) / 2 - 8px);
+  width: calc(var(--radial-r) * 2 + var(--radial-size) + 16px);
+  height: calc(var(--radial-r) * 2 + var(--radial-size) + 16px);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tile) 85%, transparent);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.35);
+  animation: radial-pop 0.18s ease-out;
+}
+
+.radial-item {
+  position: absolute;
+  left: calc(var(--radial-size) / -2);
+  top: calc(var(--radial-size) / -2);
+  display: grid;
+  place-items: center;
+  width: var(--radial-size);
+  height: var(--radial-size);
+  border-radius: 50%;
+  background: var(--tile-active);
+  color: var(--text);
+  transform: translate(var(--dx), var(--dy)) scale(1);
+  transition:
+    transform 0.14s ease-out,
+    background 0.14s,
+    color 0.14s;
+  animation: radial-out 0.18s ease-out;
+}
+
+.radial-item.is-active {
+  color: var(--warning);
+}
+
+.radial-item.is-selected {
+  z-index: 1;
+  background: var(--accent);
+  color: #fff;
+  transform: translate(var(--dx), var(--dy)) scale(1.35);
+}
+
+/* Nom de l'option visée, au-dessus du cercle (le doigt cache le centre). */
+.radial-label {
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--radial-r) + var(--radial-size) / 2 + 20px);
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: var(--tile);
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.radial-label:empty {
+  display: none;
+}
+
+/* Point de départ du doigt. */
+.radial-origin {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.6;
+  transform: translate(var(--ox), var(--oy));
+}
+
+@keyframes radial-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes radial-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes radial-out {
+  from {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0;
   }
 }

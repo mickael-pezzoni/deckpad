@@ -11,6 +11,7 @@ import (
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
 	"github.com/mickael-pezzoni/deckpad/agent/discovery"
+	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/server"
 	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/tlscert"
@@ -49,6 +50,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	favsPath, err := files.DefaultFavoritesPath()
+	if err != nil {
+		log.Fatal(err)
+	}
+	favs, err := files.OpenFavorites(favsPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dir, err := tlscert.DefaultDir()
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +67,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	handler := server.New(store, keys)
+	handler := server.New(store, keys, favs)
 
 	// Fenêtre du code : servie au PC seul, en HTTP (le navigateur ne connaît pas le certificat).
 	winLn, err := net.Listen("tcp", *windowAddr)
