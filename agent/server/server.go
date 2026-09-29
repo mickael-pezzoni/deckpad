@@ -49,6 +49,7 @@ func New(store *auth.Store, keys *shortcuts.Store, favs *files.Favorites) http.H
 	mux.HandleFunc("GET /api/files/list", handleList)
 	mux.HandleFunc("GET /api/files/recent", handleRecent)
 	mux.HandleFunc("GET /api/files/download", handleDownload)
+	mux.HandleFunc("POST /api/files/receive", handleReceive)
 	mux.HandleFunc("POST /api/files/open", handleFileAction(files.OpenOnPC))
 	mux.HandleFunc("POST /api/files/reveal", handleFileAction(files.Reveal))
 	mux.HandleFunc("GET /api/files/favorites", handleFavorites(favs))
@@ -135,7 +136,7 @@ func filesError(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 	case errors.Is(err, files.ErrNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, files.ErrNotFile), errors.Is(err, files.ErrTooMany):
+	case errors.Is(err, files.ErrNotFile), errors.Is(err, files.ErrTooMany), errors.Is(err, files.ErrBadName):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -159,6 +160,19 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))
 	log.Printf("téléchargement : %s", path)
 	http.ServeContent(w, r, name, info.ModTime(), f)
+}
+
+// handleReceive enregistre un fichier envoyé depuis un autre PC (via le hub)
+// dans Téléchargements, et renvoie son nom final.
+func handleReceive(w http.ResponseWriter, r *http.Request) {
+	path, err := files.Receive(r.URL.Query().Get("name"), r.Body)
+	if err != nil {
+		log.Printf("réception : %v", err)
+		filesError(w, err)
+		return
+	}
+	log.Printf("fichier reçu : %s", path)
+	writeJSON(w, map[string]string{"name": filepath.Base(path), "path": path})
 }
 
 // handleFileAction : ouvrir le fichier sur le PC ou le montrer dans l'Explorateur.

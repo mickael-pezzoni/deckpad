@@ -54,6 +54,7 @@ func New(tablets *auth.Store, agentStore *agents.Store, reg *registry.Registry, 
 	mux.HandleFunc("POST /api/pc/{id}/pair/start", s.handlePairStart)
 	mux.HandleFunc("POST /api/pc/{id}/pair/confirm", s.handlePairConfirm)
 	mux.HandleFunc("/api/pc/{id}/", s.handleProxy)
+	mux.HandleFunc("POST /api/transfer", s.handleTransfer)
 	mux.HandleFunc("/api/", http.NotFound)
 	mux.Handle("/", s.app)
 	return mux

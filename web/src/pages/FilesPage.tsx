@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Download, Folder, FolderSearch, HardDrive, House, MonitorUp, Star, Usb } from 'lucide-react'
+import { ArrowLeft, Download, Folder, FolderSearch, HardDrive, House, Monitor, MonitorUp, Send, Star, Usb } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tile } from '../components/Tile'
 import { useRadialMenu, type RadialItem } from '../components/RadialMenu'
@@ -10,13 +10,15 @@ import { UsageBar } from '../components/UsageBar'
 import { usePageActive } from '../layout/pageActive'
 import { formatBytes } from '../format'
 import { FILE_ICONS, fileKind } from '../files/fileKind'
-import { api } from '../api'
+import { api, currentPc } from '../api'
+import { fetchPcs, type PC } from '../pcs/pcs'
 
 type Drive = { path: string; name: string; total: number; used: number; removable: boolean }
 type Entry = { name: string; dir: boolean; size: number }
 type Recent = { name: string; path: string; folder: string; size: number; used: number }
 type Favorite = { name: string; path: string; folder: string; size: number }
 type Listing = { path: string; parent: string; entries: Entry[]; truncated: number }
+type Transfer = { id: number; name: string; pc: string; sent: number; total: number; state: 'sending' | 'done' | 'error'; text?: string }
 
 // Au-delà, le disque est signalé « presque plein ».
 const FULL = 90
@@ -32,7 +34,10 @@ export function FilesPage() {
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [targets, setTargets] = useState<PC[]>([])
+  const [transfer, setTransfer] = useState<Transfer | null>(null)
   const request = useRef(0)
+  const transferId = useRef(0)
 
   useEffect(() => {
     if (!notice) return
@@ -81,6 +86,72 @@ export function FilesPage() {
       .catch(() => {})
   }, [active])
 
+  // Fin d'envoi : le message reste un peu, puis disparaît.
+  useEffect(() => {
+    if (!transfer || transfer.state === 'sending') return
+    const id = setTimeout(() => setTransfer((cur) => (cur === transfer ? null : cur)), 4000)
+    return () => clearTimeout(id)
+  }, [transfer])
+
+  // PC vers lesquels envoyer un fichier : appairés, en ligne, et pas celui-ci.
+  const refreshTargets = useCallback(() => {
+    fetchPcs().then((list) => {
+      if (list) setTargets(list.filter((pc) => pc.online && pc.paired && pc.id !== currentPc()))
+    })
+  }, [])
+
+  useEffect(() => {
+    if (active) refreshTargets()
+  }, [active, refreshTargets])
+
+  // Envoi d'un fichier vers un autre PC : le hub le copie d'agent à agent et
+  // donne l'avancement ligne par ligne.
+  async function sendTo(path: string, pc: PC) {
+    const id = ++transferId.current
+    const name = baseName(path)
+    const update = (patch: Partial<Transfer>) => {
+      if (id === transferId.current) setTransfer((cur) => (cur && cur.id === id ? { ...cur, ...patch } : cur))
+    }
+    const fail = (reason?: string) => update({ state: 'error', text: sendError(reason, pc.name, t) })
+    setTransfer({ id, name, pc: pc.name, sent: 0, total: 0, state: 'sending' })
+    const r = await fetch('/api/transfer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: currentPc(), to: pc.id, path }),
+    }).catch(() => null)
+    if (!r?.ok || !r.body) {
+      const body = r ? await r.json().catch(() => null) : null
+      fail(r ? body?.reason : 'offline')
+      return
+    }
+    const reader = r.body.pipeThrough(new TextDecoderStream()).getReader()
+    let buffer = ''
+    for (;;) {
+      const { value, done } = await reader.read().catch(() => ({ value: undefined, done: true }))
+      if (done) break
+      buffer += value
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
+        if (!line.trim()) continue
+        const e = JSON.parse(line) as { sent?: number; total?: number; done?: boolean; name?: string; error?: string }
+        if (e.error) return fail(e.error)
+        if (e.done) {
+          const saved = e.name ?? name
+          update({
+            state: 'done',
+            sent: 1,
+            total: 1,
+            text: saved === name ? t('files.send.sent', { name, pc: pc.name }) : t('files.send.renamed', { name: saved, pc: pc.name }),
+          })
+          return
+        }
+        update({ sent: e.sent ?? 0, total: e.total ?? 0 })
+      }
+    }
+    update({ state: 'error', text: t('files.send.lost', { pc: pc.name }) })
+  }
+
   // Retour sur la page : le dossier affiché peut avoir changé.
   const shownPath = listing?.path
   useEffect(() => {
@@ -117,6 +188,9 @@ export function FilesPage() {
   // Actions du menu circulaire d'un fichier.
   const fileActions: FileActions = {
     isFavorite: (path) => favorites.some((f) => samePath(f.path, path)),
+    targets,
+    refreshTargets,
+    sendTo,
     async run(action, path) {
       const name = baseName(path)
       if (action === 'download') {
@@ -139,7 +213,11 @@ export function FilesPage() {
     },
   }
 
-  const toast = notice && createPortal(<div className="toast">{notice}</div>, document.body)
+  const toast =
+    active &&
+    (transfer
+      ? createPortal(<TransferToast transfer={transfer} />, document.body)
+      : notice && createPortal(<div className="toast">{notice}</div>, document.body))
 
   if (!drive) {
     if (!drives) return drivesError ? <p className="coming-soon">{t('common.unreachable')}</p> : <Loader />
@@ -227,10 +305,16 @@ export function FilesPage() {
 }
 
 type FileAction = 'open' | 'download' | 'favorite' | 'unfavorite' | 'reveal'
-type FileActions = { isFavorite: (path: string) => boolean; run: (action: FileAction, path: string) => void }
+type FileActions = {
+  isFavorite: (path: string) => boolean
+  run: (action: FileAction, path: string) => void
+  targets: PC[]
+  refreshTargets: () => void
+  sendTo: (path: string, pc: PC) => void
+}
 
 // Tuile de fichier. Appui long : menu circulaire (ouvrir sur le PC, télécharger,
-// favori, afficher dans le dossier).
+// favori, afficher dans le dossier, envoyer vers un autre PC).
 function FileTile({ name, path, size, actions, onClick }: { name: string; path: string; size: number; actions: FileActions; onClick?: () => void }) {
   const { t } = useTranslation()
   const kind = fileKind(name)
@@ -246,8 +330,15 @@ function FileTile({ name, path, size, actions, onClick }: { name: string; path: 
       onSelect: () => actions.run(favorite ? 'unfavorite' : 'favorite', path),
     },
     { id: 'reveal', label: t('files.actions.reveal'), icon: FolderSearch, onSelect: () => actions.run('reveal', path) },
+    {
+      id: 'send',
+      label: t('files.actions.send'),
+      icon: Send,
+      emptyLabel: t('files.send.noPc'),
+      children: actions.targets.map((pc) => ({ id: pc.id, label: pc.name, icon: Monitor, onSelect: () => actions.sendTo(path, pc) })),
+    },
   ]
-  const { bind, menu } = useRadialMenu(items, onClick)
+  const { bind, menu } = useRadialMenu(items, onClick, actions.refreshTargets)
   return (
     <>
       <Tile
@@ -263,6 +354,31 @@ function FileTile({ name, path, size, actions, onClick }: { name: string; path: 
       {menu}
     </>
   )
+}
+
+// Avancement d'un envoi vers un autre PC, puis le résultat.
+function TransferToast({ transfer }: { transfer: Transfer }) {
+  const { t } = useTranslation()
+  if (transfer.state !== 'sending') return <div className="toast">{transfer.text}</div>
+  const pct = transfer.total > 0 ? Math.min(100, (transfer.sent / transfer.total) * 100) : 0
+  return (
+    <div className="toast toast-progress">
+      <span>{t('files.send.sending', { name: transfer.name, pc: transfer.pc })}</span>
+      {transfer.total > 0 && (
+        <span className="toast-progress-row">
+          <UsageBar percent={pct} />
+          <span className="toast-progress-pct">{Math.round(pct)} %</span>
+        </span>
+      )}
+    </div>
+  )
+}
+
+const SEND_ERRORS = ['not-found', 'denied', 'offline', 'target-offline', 'target-denied'] as const
+
+function sendError(reason: string | undefined, pc: string, t: ReturnType<typeof useTranslation>['t']) {
+  const known = SEND_ERRORS.find((r) => r === reason)
+  return t(`files.send.errors.${known ?? 'failed'}`, { pc })
 }
 
 function post(path: string, body: unknown) {
