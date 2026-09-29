@@ -101,3 +101,22 @@ func TestExpiredCode(t *testing.T) {
 		t.Errorf("attendu ErrExpired, obtenu %v", err)
 	}
 }
+
+func TestRepairingReplacesOldKey(t *testing.T) {
+	s, _, _ := newStore(t)
+	pair := func() string {
+		if _, err := s.Start(); err != nil {
+			t.Fatal(err)
+		}
+		token, _, err := s.Confirm(s.Code().Code, "deckpad hub")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return token
+	}
+	old := pair()
+	fresh := pair()
+	if s.Valid(old) || !s.Valid(fresh) || len(s.devices) != 1 {
+		t.Fatalf("le nouvel appairage doit remplacer l'ancien : %+v", s.devices)
+	}
+}

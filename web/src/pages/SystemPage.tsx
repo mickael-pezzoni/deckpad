@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Lock, Moon, Power, RotateCcw, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { HoldButton } from '../components/HoldButton'
+import { api } from '../api'
 
 type Action = {
   id: 'lock' | 'sleep' | 'restart' | 'shutdown'
@@ -30,7 +31,7 @@ export function SystemPage() {
   }, [notice])
 
   async function run(a: Action) {
-    const r = await fetch(`/api/system/${a.id}`, { method: 'POST' }).catch(() => null)
+    const r = await fetch(api(`/system/${a.id}`), { method: 'POST' }).catch(() => null)
     setNotice(r?.ok ? t(`system.${a.id}Done`) : t('system.failed', { action: t(`system.${a.id}`).toLowerCase() }))
   }
 

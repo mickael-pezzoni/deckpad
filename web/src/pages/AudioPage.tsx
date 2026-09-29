@@ -8,6 +8,7 @@ import { SideScroll } from '../components/SideScroll'
 import { Loader } from '../components/Loader'
 import { useEventStream } from '../hooks/useEventStream'
 import { useLatched } from '../hooks/useLatched'
+import { api } from '../api'
 
 type Level = { volume: number; muted: boolean }
 type Device = { id: string; name: string; default: boolean }
@@ -24,7 +25,7 @@ export function AudioPage() {
   const { t } = useTranslation()
   const [state, setState] = useState<AudioState | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const connected = useEventStream<AudioState>('/api/audio/stream', setState)
+  const connected = useEventStream<AudioState>(api('/audio/stream'), setState)
   // Son général coupé : toutes les applis s'affichent coupées, tout de suite.
   const [masterMuted, latchMasterMuted] = useLatched(state?.master?.muted ?? false)
 
@@ -35,7 +36,7 @@ export function AudioPage() {
   }, [notice])
 
   async function post(path: string, body: object, failure: string) {
-    const r = await fetch(`/api/audio/${path}`, {
+    const r = await fetch(api(`/audio/${path}`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -80,7 +81,7 @@ export function AudioPage() {
             key={a.id}
             label={a.name}
             appIcon
-            icon={<AppIcon name={a.id} src={`/api/audio/icon?app=${encodeURIComponent(a.id)}`} />}
+            icon={<AppIcon name={a.id} src={api(`/audio/icon?app=${encodeURIComponent(a.id)}`)} />}
             volume={a.volume}
             muted={a.muted}
             silenced={masterMuted}

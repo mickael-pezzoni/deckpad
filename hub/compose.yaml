@@ -1,0 +1,17 @@
+# docker compose up -d   (depuis le dossier hub/)
+services:
+  deckpad-hub:
+    build:
+      context: ..
+      dockerfile: hub/Dockerfile
+    image: deckpad-hub
+    restart: unless-stopped
+    # Réseau de l'hôte obligatoire : la découverte mDNS passe par le multicast
+    # du réseau local, qu'un réseau Docker classique ne laisse pas entrer.
+    network_mode: host
+    volumes:
+      - data:/data # appairages et certificat du hub
+    # Autres ports : command: ["-addr", ":9000", "-https-addr", ":9001"]
+
+volumes:
+  data:

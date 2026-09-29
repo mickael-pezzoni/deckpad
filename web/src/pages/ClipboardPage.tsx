@@ -8,6 +8,7 @@ import { ACTION_ICONS, HistoryChip } from '../components/HistoryChip'
 import { useEventStream } from '../hooks/useEventStream'
 import { copyToDevice, looksLikeURL } from '../clipboard/copy'
 import { loadHistory, pushHistory, removeHistory, type SendAction } from '../clipboard/history'
+import { api } from '../api'
 
 type ClipboardState = {
   text?: string
@@ -34,7 +35,7 @@ export function ClipboardPage() {
   const [history, setHistory] = useState(loadHistory)
   const [pc, setPC] = useState<ClipboardState | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const connected = useEventStream<ClipboardState>('/api/clipboard/stream', setPC)
+  const connected = useEventStream<ClipboardState>(api('/clipboard/stream'), setPC)
 
   useEffect(() => {
     if (!notice) return
@@ -45,7 +46,7 @@ export function ClipboardPage() {
   async function send(action: SendAction, text: string) {
     if (!text.trim()) return setNotice(t('clipboard.needText'))
     if (action === 'open' && !looksLikeURL(text)) return setNotice(t('clipboard.notURL'))
-    const r = await fetch('/api/clipboard/send', {
+    const r = await fetch(api('/clipboard/send'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, text }),
@@ -106,7 +107,7 @@ export function ClipboardPage() {
           </span>
           <PCContent state={pc} connected={connected} />
           {pc?.image ? (
-            <a className="clip-action clip-pc-btn" href={`/api/clipboard/image?v=${pc.image}&download`} download>
+            <a className="clip-action clip-pc-btn" href={api(`/clipboard/image?v=${pc.image}&download`)} download>
               <Download size={26} strokeWidth={1.75} aria-hidden />
               <span>{t('clipboard.saveImage')}</span>
             </a>
@@ -153,7 +154,7 @@ function PCContent({ state, connected }: { state: ClipboardState | null; connect
   if (state.image) {
     return (
       <div className="clip-pc-image">
-        <img src={`/api/clipboard/image?v=${state.image}`} alt={t('clipboard.imageAlt')} />
+        <img src={api(`/clipboard/image?v=${state.image}`)} alt={t('clipboard.imageAlt')} />
       </div>
     )
   }

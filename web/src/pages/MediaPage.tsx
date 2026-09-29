@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader } from '../components/Loader'
 import { useEventStream } from '../hooks/useEventStream'
 import { useLatched } from '../hooks/useLatched'
+import { api } from '../api'
 
 type MediaState = {
   active: boolean
@@ -23,7 +24,7 @@ export function MediaPage() {
   const { t } = useTranslation()
   const [state, setState] = useState<MediaState | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const connected = useEventStream<MediaState>('/api/media/stream', setState)
+  const connected = useEventStream<MediaState>(api('/media/stream'), setState)
   const [playing, latchPlaying] = useLatched(state?.playing ?? false, 2000)
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function MediaPage() {
 
   async function send(action: Action) {
     if (action === 'playpause') latchPlaying(!playing)
-    const r = await fetch(`/api/media/${action}`, { method: 'POST' }).catch(() => null)
+    const r = await fetch(api(`/media/${action}`), { method: 'POST' }).catch(() => null)
     if (!r?.ok) setNotice(t('media.noAnswer'))
   }
 
@@ -95,7 +96,7 @@ function Cover({ id }: { id?: string }) {
   return (
     <div className="media-cover">
       {show ? (
-        <img src={`/api/media/cover?v=${id}`} alt="" onError={() => setFailed(id)} />
+        <img src={api(`/media/cover?v=${id}`)} alt="" onError={() => setFailed(id)} />
       ) : (
         <Music size={72} strokeWidth={1.5} aria-hidden />
       )}

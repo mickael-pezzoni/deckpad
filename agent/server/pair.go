@@ -14,49 +14,27 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
 )
 
-// Deux cookies distincts : en HTTPS le cookie est « Secure », et le navigateur
-// interdit au HTTP de poser un cookie du même nom par-dessus. Avec un seul nom,
-// passer une fois en HTTPS cassait l'appairage en HTTP (serveur de dev notamment).
-const (
-	tokenCookie       = "deckpad_token"
-	secureTokenCookie = "deckpad_token_s"
-)
-
-// token renvoie la clé envoyée par la tablette, selon le protocole.
+// token renvoie la clé envoyée par le hub (en-tête « Authorization: Bearer … »).
 func token(r *http.Request) string {
-	if r.TLS != nil {
-		if c, err := r.Cookie(secureTokenCookie); err == nil {
-			return c.Value
-		}
+	t, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if !ok {
+		return ""
 	}
-	if c, err := r.Cookie(tokenCookie); err == nil {
-		return c.Value
-	}
-	return ""
+	return strings.TrimSpace(t)
 }
 
 //go:embed pairwin.html
 var pairWindowHTML []byte
 
-// requireToken bloque toute l'API aux appareils non appairés, sauf les routes d'appairage.
+// requireToken bloque toute l'API au hub non appairé, sauf les routes d'appairage.
 func requireToken(store *auth.Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") && !strings.HasPrefix(r.URL.Path, "/api/pair/") && !paired(store, r) {
+		if strings.HasPrefix(r.URL.Path, "/api/") && !strings.HasPrefix(r.URL.Path, "/api/pair/") && !store.Valid(token(r)) {
 			http.Error(w, "appareil non appairé", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-func paired(store *auth.Store, r *http.Request) bool {
-	return store.Valid(token(r))
-}
-
-func handlePairStatus(store *auth.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, map[string]bool{"paired": paired(store, r)})
-	}
 }
 
 // handlePairStart fait apparaître le code sur l'écran du PC.
@@ -83,7 +61,7 @@ func handlePairConfirm(store *auth.Store) http.HandlerFunc {
 		}
 		name := strings.TrimSpace(req.Name)
 		if name == "" || len(name) > 64 {
-			name = "Tablette"
+			name = "deckpad hub"
 		}
 		token, remaining, err := store.Confirm(req.Code, name)
 		if err != nil {
@@ -91,8 +69,7 @@ func handlePairConfirm(store *auth.Store) http.HandlerFunc {
 			return
 		}
 		log.Printf("appairage : %q ajouté", name)
-		setToken(w, r, token)
-		w.WriteHeader(http.StatusNoContent)
+		writeJSON(w, map[string]string{"token": token})
 	}
 }
 
