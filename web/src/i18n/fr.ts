@@ -106,6 +106,7 @@ export const fr = {
         'target-offline': '{{pc}} injoignable',
         'target-denied': '{{pc}} refuse d’écrire dans ce dossier',
         'target-folder': 'Ce dossier n’existe plus sur {{pc}}',
+        'target-outdated': 'L’agent de {{pc}} n’est pas à jour : fichier mis dans ses Téléchargements',
         failed: 'Envoi vers {{pc}} échoué',
       },
     },

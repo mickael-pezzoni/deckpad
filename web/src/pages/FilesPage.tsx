@@ -412,7 +412,7 @@ function TransferToast({ transfer }: { transfer: Transfer }) {
   )
 }
 
-const SEND_ERRORS = ['not-found', 'denied', 'offline', 'target-offline', 'target-denied', 'target-folder'] as const
+const SEND_ERRORS = ['not-found', 'denied', 'offline', 'target-offline', 'target-denied', 'target-folder', 'target-outdated'] as const
 
 function sendError(reason: string | undefined, pc: string, t: ReturnType<typeof useTranslation>['t']) {
   const known = SEND_ERRORS.find((r) => r === reason)

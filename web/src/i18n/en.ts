@@ -108,6 +108,7 @@ export const en: Messages = {
         'target-offline': '{{pc}} unreachable',
         'target-denied': '{{pc}} cannot write to this folder',
         'target-folder': 'This folder no longer exists on {{pc}}',
+        'target-outdated': 'The agent on {{pc}} is out of date: file saved to its Downloads',
         failed: 'Sending to {{pc}} failed',
       },
     },

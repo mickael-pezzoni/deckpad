@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -191,11 +192,32 @@ func (s *Server) transfer(ctx context.Context, src, dst endpoint, path, dir stri
 	}
 	var saved struct {
 		Name string `json:"name"`
+		Path string `json:"path"`
 	}
 	if err := json.NewDecoder(out.Body).Decode(&saved); err != nil {
 		return "", errors.Join(transferError("target-failed"), err)
 	}
+	// Un agent d'avant le choix du dossier ignore dir et enregistre dans
+	// Téléchargements : on le signale au lieu de dire « envoyé dans … ».
+	if dir != "" && !sameDir(parentDir(saved.Path), dir) {
+		return "", errors.Join(transferError("target-outdated"), errors.New("enregistré dans "+saved.Path))
+	}
 	return saved.Name, nil
+}
+
+// parentDir : dossier d'un chemin Windows ou Linux, quel que soit l'OS du hub.
+func parentDir(path string) string {
+	return strings.TrimSuffix(path, baseName(path))
+}
+
+// sameDir compare deux dossiers sans tenir compte du séparateur final, ni de la
+// casse pour un chemin Windows.
+func sameDir(a, b string) bool {
+	a, b = strings.TrimRight(a, `/\`), strings.TrimRight(b, `/\`)
+	if strings.Contains(a, `\`) {
+		return strings.EqualFold(a, b)
+	}
+	return a == b
 }
 
 func agentStatus(resp *http.Response) error {

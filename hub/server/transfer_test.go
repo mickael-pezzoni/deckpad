@@ -18,7 +18,7 @@ import (
 
 // fileAgent imite les routes de fichiers d'un agent : il sert files en
 // téléchargement et garde ce qu'il reçoit dans got.
-func fileAgent(t *testing.T, files map[string]string, got map[string]string) *httptest.Server {
+func fileAgent(t *testing.T, files map[string]string, got map[string]string, outdated bool) *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/files/download", func(w http.ResponseWriter, r *http.Request) {
 		body, ok := files[r.URL.Query().Get("path")]
@@ -41,7 +41,16 @@ func fileAgent(t *testing.T, files map[string]string, got map[string]string) *ht
 			name = "copie " + name
 		}
 		got[name] = string(b)
-		writeJSON(w, map[string]string{"name": name})
+		if outdated {
+			// Agent d'avant le choix du dossier : tout part dans Téléchargements.
+			writeJSON(w, map[string]string{"name": filepath.Base(name), "path": `C:\Users\m\Downloads\` + filepath.Base(name)})
+			return
+		}
+		path := name
+		if !strings.Contains(path, `\`) {
+			path = `C:\Users\m\Downloads\` + name
+		}
+		writeJSON(w, map[string]string{"name": name, "path": path})
 	})
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer secret" {
@@ -63,9 +72,10 @@ func TestTransfer(t *testing.T) {
 	pcs, _ := agents.Open(filepath.Join(dir, "agents.json"))
 	reg := registry.New()
 	received := map[string]string{}
-	src := fileAgent(t, map[string]string{`C:\Users\m\photo.jpg`: "pixels"}, nil)
-	dst := fileAgent(t, nil, received)
-	for id, srv := range map[string]*httptest.Server{"pc1": src, "pc2": dst} {
+	src := fileAgent(t, map[string]string{`C:\Users\m\photo.jpg`: "pixels"}, nil, false)
+	dst := fileAgent(t, nil, received, false)
+	old := fileAgent(t, nil, map[string]string{}, true)
+	for id, srv := range map[string]*httptest.Server{"pc1": src, "pc2": dst, "pc3": old} {
 		register(t, reg, id, srv)
 		pcs.Set(id, agents.Paired{Name: id, Token: "secret", Fingerprint: agents.Fingerprint(srv.Certificate().Raw)})
 	}
@@ -109,7 +119,11 @@ func TestTransfer(t *testing.T) {
 	if _, events := send(`{"from":"pc1","to":"pc2","path":"C:\\absent.txt"}`); last(events).Error != "not-found" {
 		t.Fatalf("fichier absent : %+v", events)
 	}
-	if code, _ := send(`{"from":"pc1","to":"pc3","path":"C:\\a"}`); code != http.StatusServiceUnavailable {
+	// Un agent pas à jour qui ignore le dossier : l'erreur le dit.
+	if _, events := send(`{"from":"pc1","to":"pc3","path":"C:\\Users\\m\\photo.jpg","dir":"D:\\Photos"}`); last(events).Error != "target-outdated" {
+		t.Fatalf("agent pas à jour : %+v", events)
+	}
+	if code, _ := send(`{"from":"pc1","to":"pc4","path":"C:\\a"}`); code != http.StatusServiceUnavailable {
 		t.Fatalf("PC cible inconnu : %d", code)
 	}
 	if code, _ := send(`{"from":"pc1","to":"pc1","path":"C:\\a"}`); code != http.StatusBadRequest {
