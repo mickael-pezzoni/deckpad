@@ -3023,3 +3023,158 @@ body,
   background: var(--tile-active);
   content: '';
 }
+
+/* Téléphone : la barre du bas ne montre que la page affichée (un tap ouvre le menu latéral). */
+.side-current {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--tile);
+  color: var(--accent);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.side-current:active {
+  background: var(--tile-active);
+}
+
+.side-current-menu {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.sidebar-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--scrim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.sidebar-scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(300px, 82vw);
+  padding: 20px 16px;
+  background: var(--bg);
+  transform: translateX(-100%);
+  transition: transform 0.22s ease-out;
+}
+
+.sidebar.is-open {
+  transform: none;
+}
+
+/* PC piloté, en tête : un tap ramène à la liste des PC. */
+.sidebar-pc {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--tile);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-pc:active {
+  background: var(--tile-active);
+}
+
+.sidebar-pc-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-pc-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Liste des pages : seule elle défile si l'écran est trop petit, sans barre visible. */
+.sidebar-pages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sidebar-pages::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-item {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 16px;
+  height: 52px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-item:active {
+  background: var(--tile-active);
+}
+
+.sidebar-item.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.sidebar-foot {
+  display: flex;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-scrim {
+    transition: none;
+  }
+}

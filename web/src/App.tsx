@@ -104,7 +104,7 @@ export default function App() {
   if (screen.kind === 'pick') return <PcPicker current={getStoredPc()} onPick={pick} />
 
   return (
-    <AppShell pages={pages} current={current} onNavigate={(i) => swiper?.slideTo(i)} onSwitchPc={() => setScreen({ kind: 'pick' })}>
+    <AppShell pages={pages} current={current} onNavigate={(i) => swiper?.slideTo(i)} pcName={screen.pc.name} onSwitchPc={() => setScreen({ kind: 'pick' })}>
       {deck}
     </AppShell>
   )

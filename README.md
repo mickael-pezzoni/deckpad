@@ -18,12 +18,14 @@ Control your PC from a tablet while you play: themed pages you swipe through, wi
 | ![Files](docs/screenshots/files.png) Files | ![Clipboard](docs/screenshots/clipboard.png) Clipboard |
 | ![System](docs/screenshots/system.png) System | ![Light theme](docs/screenshots/info-light.png) Light theme |
 | ![Settings](docs/screenshots/settings.png) Settings | ![In French](docs/screenshots/processes-french.png) In French |
+| ![PC list](docs/screenshots/pcs.png) Choose a PC (hub) | |
 
-On phones too:
+On phones too, with a side menu:
 
 <p>
   <img src="docs/screenshots/stats-phone.png" alt="Stats on a phone" width="240">
   <img src="docs/screenshots/network-phone.png" alt="Network on a phone" width="240">
+  <img src="docs/screenshots/menu-phone.png" alt="Side menu on a phone" width="240">
 </p>
 
 ## Usage
@@ -60,7 +62,12 @@ Picking a PC that isn't paired yet opens a keypad on the tablet and a small wind
 - The hub talks to each PC over HTTPS. The agent creates its own certificate on first launch (`agent.crt`, valid 20 years). The hub remembers its fingerprint at pairing and then refuses any other certificate, like SSH does: nothing to install on the PC or the tablet for this part.
 - The PC only keeps the fingerprint of the hub's key, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs the hub; it then asks for a new code.
 - The window opens with Edge or Chrome (Chromium on Linux), otherwise in the default browser.
-- To switch PC: the first button of the bottom menu (two arrows) brings back the list. The chosen PC is remembered on the tablet: the app reopens on it.
+- The chosen PC is remembered on the tablet: the app reopens on it.
+
+### Navigate
+
+- Swipe between pages, or use the bottom menu. Its first button (two arrows) brings back the PC list.
+- On a phone, the bottom bar only shows the current page: tap it to open a side menu with every page, "Switch PC" and the theme button.
 
 ### Install the app on the tablet (PWA)
 
