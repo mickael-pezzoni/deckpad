@@ -82,8 +82,17 @@ export const en: Messages = {
     almostFull: 'Almost full',
     empty: 'Empty folder',
     folder: 'Folder',
-    file: 'File',
     more: '+ {{n}} more items not shown',
+    kinds: {
+      image: 'Image',
+      video: 'Video',
+      audio: 'Audio',
+      document: 'Document',
+      archive: 'Archive',
+      program: 'Program',
+      code: 'Code',
+      file: 'File',
+    },
   },
   network: {
     download: 'Download',

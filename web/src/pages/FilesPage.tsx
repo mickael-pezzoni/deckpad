@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, File, Folder, HardDrive, Usb } from 'lucide-react'
+import { ArrowLeft, Folder, HardDrive, Usb } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Tile } from '../components/Tile'
 import { Loader } from '../components/Loader'
 import { UsageBar } from '../components/UsageBar'
 import { usePageActive } from '../layout/pageActive'
 import { formatBytes } from '../format'
+import { FILE_ICONS, fileKind } from '../files/fileKind'
 
 type Drive = { path: string; name: string; total: number; used: number; removable: boolean }
 type Entry = { name: string; dir: boolean; size: number }
@@ -135,9 +136,7 @@ export function FilesPage() {
                 {e.name}
               </Tile>
             ) : (
-              <Tile key={e.name} label={t('files.file')} icon={File} detail={formatBytes(e.size)}>
-                {e.name}
-              </Tile>
+              <FileTile key={e.name} entry={e} />
             ),
           )}
           {listing && listing.truncated > 0 && (
@@ -147,6 +146,16 @@ export function FilesPage() {
       )}
       {toast}
     </>
+  )
+}
+
+function FileTile({ entry }: { entry: Entry }) {
+  const { t } = useTranslation()
+  const kind = fileKind(entry.name)
+  return (
+    <Tile label={t(`files.kinds.${kind}`)} icon={FILE_ICONS[kind]} detail={formatBytes(entry.size)}>
+      {entry.name}
+    </Tile>
   )
 }
 
