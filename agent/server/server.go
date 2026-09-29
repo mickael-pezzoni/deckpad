@@ -136,7 +136,7 @@ func filesError(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 	case errors.Is(err, files.ErrNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, files.ErrNotFile), errors.Is(err, files.ErrTooMany), errors.Is(err, files.ErrBadName):
+	case errors.Is(err, files.ErrNotFile), errors.Is(err, files.ErrTooMany), errors.Is(err, files.ErrBadName), errors.Is(err, files.ErrNotDir):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -163,9 +163,9 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleReceive enregistre un fichier envoyé depuis un autre PC (via le hub)
-// dans Téléchargements, et renvoie son nom final.
+// dans le dossier demandé (par défaut Téléchargements), et renvoie son nom final.
 func handleReceive(w http.ResponseWriter, r *http.Request) {
-	path, err := files.Receive(r.URL.Query().Get("name"), r.Body)
+	path, err := files.Receive(r.Context(), r.URL.Query().Get("dir"), r.URL.Query().Get("name"), r.Body)
 	if err != nil {
 		log.Printf("réception : %v", err)
 		filesError(w, err)

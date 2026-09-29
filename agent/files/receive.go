@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,22 +12,24 @@ import (
 )
 
 // Réception d'un fichier envoyé depuis un autre PC (le hub fait le relais) :
-// il arrive dans Téléchargements, renommé « nom (1).ext » si le nom est pris.
+// il arrive dans Téléchargements ou dans un dossier choisi (un favori),
+// renommé « nom (1).ext » si le nom est pris.
 
 var ErrBadName = errors.New("nom de fichier invalide")
 
-// receiveDir : le dossier de destination, remplacé dans les tests.
+// receiveDir : le dossier par défaut, remplacé dans les tests.
 var receiveDir = downloadsDir
 
-// Receive enregistre src sous name dans Téléchargements et renvoie le chemin final.
+// Receive enregistre src sous name dans dir (vide : Téléchargements) et renvoie
+// le chemin final. dir doit être un dossier visible sur l'un des disques.
 // Pendant la copie, le fichier s'appelle « .nom.deckpad » : un envoi interrompu
 // ne laisse pas un fichier tronqué sous le vrai nom.
-func Receive(name string, src io.Reader) (string, error) {
+func Receive(ctx context.Context, dir, name string, src io.Reader) (string, error) {
 	name = safeName(name)
 	if name == "" {
 		return "", ErrBadName
 	}
-	dir, err := receiveDir()
+	dir, err := targetDir(ctx, dir)
 	if err != nil {
 		return "", err
 	}
@@ -57,6 +60,22 @@ func Receive(name string, src io.Reader) (string, error) {
 	}
 	return final, nil
 }
+
+func targetDir(ctx context.Context, dir string) (string, error) {
+	if dir == "" {
+		return receiveDir()
+	}
+	dir, info, err := Item(ctx, dir)
+	if err != nil {
+		return "", err
+	}
+	if !info.IsDir() {
+		return "", ErrNotDir
+	}
+	return dir, nil
+}
+
+var ErrNotDir = errors.New("ce n'est pas un dossier")
 
 // reserve crée un fichier vide au premier nom libre : « a.txt », « a (1).txt »…
 func reserve(dir, name string) (string, error) {

@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -32,7 +33,7 @@ func TestReceive(t *testing.T) {
 	t.Cleanup(func() { receiveDir = downloadsDir })
 
 	for i, want := range []string{"rapport.pdf", "rapport (1).pdf", "rapport (2).pdf"} {
-		path, err := Receive("rapport.pdf", strings.NewReader("contenu"))
+		path, err := Receive(context.Background(), "", "rapport.pdf", strings.NewReader("contenu"))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -43,15 +44,29 @@ func TestReceive(t *testing.T) {
 			t.Errorf("contenu de %s : %q", want, b)
 		}
 	}
-	if path, err := Receive(".bashrc", strings.NewReader("")); err != nil || filepath.Base(path) != ".bashrc" {
+	if path, err := Receive(context.Background(), "", ".bashrc", strings.NewReader("")); err != nil || filepath.Base(path) != ".bashrc" {
 		t.Errorf("fichier caché : %s, %v", path, err)
 	}
-	if _, err := Receive("..", strings.NewReader("")); !errors.Is(err, ErrBadName) {
+	if _, err := Receive(context.Background(), "", "..", strings.NewReader("")); !errors.Is(err, ErrBadName) {
 		t.Errorf("nom invalide accepté : %v", err)
 	}
 
+	// Vers un dossier choisi : il doit exister sur un disque et être un dossier.
+	onlyDrive(t, dir)
+	sub := filepath.Join(dir, "Photos")
+	os.Mkdir(sub, 0o755)
+	if path, err := Receive(context.Background(), sub, "a.jpg", strings.NewReader("x")); err != nil || filepath.Dir(path) != sub {
+		t.Errorf("dossier choisi : %s, %v", path, err)
+	}
+	if _, err := Receive(context.Background(), filepath.Join(dir, "absent"), "a.jpg", strings.NewReader("x")); !errors.Is(err, ErrNotFound) {
+		t.Errorf("dossier absent : %v", err)
+	}
+	if _, err := Receive(context.Background(), filepath.Join(sub, "a.jpg"), "b.jpg", strings.NewReader("x")); !errors.Is(err, ErrNotDir) {
+		t.Errorf("fichier pris pour un dossier : %v", err)
+	}
+
 	// Envoi interrompu : ni fichier tronqué, ni nom réservé qui traîne.
-	if _, err := Receive("coupe.bin", io.MultiReader(strings.NewReader("début"), failing{})); err == nil {
+	if _, err := Receive(context.Background(), "", "coupe.bin", io.MultiReader(strings.NewReader("début"), failing{})); err == nil {
 		t.Error("erreur de lecture ignorée")
 	}
 	entries, _ := os.ReadDir(dir)

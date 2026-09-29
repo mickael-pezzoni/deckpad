@@ -18,7 +18,12 @@ type Entry = { name: string; dir: boolean; size: number }
 type Recent = { name: string; path: string; folder: string; size: number; used: number }
 type Favorite = { name: string; path: string; folder: string; dir: boolean; size: number }
 type Listing = { path: string; parent: string; entries: Entry[]; truncated: number }
+// PC vers lequel envoyer, avec ses dossiers favoris (destinations proposées).
+type Target = PC & { folders: Favorite[] }
 type Transfer = { id: number; name: string; pc: string; sent: number; total: number; state: 'sending' | 'done' | 'error'; text?: string }
+
+// Dossiers favoris proposés au plus par PC cible (avec Téléchargements, le cercle en tient 8).
+const MAX_FOLDERS = 7
 
 // Au-delà, le disque est signalé « presque plein ».
 const FULL = 90
@@ -34,7 +39,7 @@ export function FilesPage() {
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
-  const [targets, setTargets] = useState<PC[]>([])
+  const [targets, setTargets] = useState<Target[]>([])
   const [transfer, setTransfer] = useState<Transfer | null>(null)
   const request = useRef(0)
   const transferId = useRef(0)
@@ -93,11 +98,23 @@ export function FilesPage() {
     return () => clearTimeout(id)
   }, [transfer])
 
-  // PC vers lesquels envoyer un fichier : appairés, en ligne, et pas celui-ci.
-  const refreshTargets = useCallback(() => {
-    fetchPcs().then((list) => {
-      if (list) setTargets(list.filter((pc) => pc.online && pc.paired && pc.id !== currentPc()))
-    })
+  // PC vers lesquels envoyer un fichier : appairés, en ligne, et pas celui-ci,
+  // avec leurs dossiers favoris (on garde les précédents le temps de les relire).
+  const refreshTargets = useCallback(async () => {
+    const list = await fetchPcs()
+    if (!list) return
+    const pcs = list.filter((pc) => pc.online && pc.paired && pc.id !== currentPc())
+    const folders = await Promise.all(
+      pcs.map((pc) =>
+        fetch(`/api/pc/${encodeURIComponent(pc.id)}/files/favorites`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((favs: Favorite[] | null) => favs?.filter((f) => f.dir).slice(0, MAX_FOLDERS) ?? null)
+          .catch(() => null),
+      ),
+    )
+    setTargets((prev) =>
+      pcs.map((pc, i) => ({ ...pc, folders: folders[i] ?? prev.find((p) => p.id === pc.id)?.folders ?? [] })),
+    )
   }, [])
 
   useEffect(() => {
@@ -106,7 +123,7 @@ export function FilesPage() {
 
   // Envoi d'un fichier vers un autre PC : le hub le copie d'agent à agent et
   // donne l'avancement ligne par ligne.
-  async function sendTo(path: string, pc: PC) {
+  async function sendTo(path: string, pc: PC, folder?: Favorite) {
     const id = ++transferId.current
     const name = baseName(path)
     const update = (patch: Partial<Transfer>) => {
@@ -117,7 +134,7 @@ export function FilesPage() {
     const r = await fetch('/api/transfer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: currentPc(), to: pc.id, path }),
+      body: JSON.stringify({ from: currentPc(), to: pc.id, path, dir: folder?.path ?? '' }),
     }).catch(() => null)
     if (!r?.ok || !r.body) {
       const body = r ? await r.json().catch(() => null) : null
@@ -142,7 +159,11 @@ export function FilesPage() {
             state: 'done',
             sent: 1,
             total: 1,
-            text: saved === name ? t('files.send.sent', { name, pc: pc.name }) : t('files.send.renamed', { name: saved, pc: pc.name }),
+            text: t(saved === name ? 'files.send.sent' : 'files.send.renamed', {
+              name: saved,
+              pc: pc.name,
+              folder: folder?.name ?? t('files.send.downloads'),
+            }),
           })
           return
         }
@@ -311,9 +332,9 @@ type FileAction = 'open' | 'download' | 'favorite' | 'unfavorite' | 'reveal'
 type FileActions = {
   isFavorite: (path: string) => boolean
   run: (action: FileAction, path: string) => void
-  targets: PC[]
+  targets: Target[]
   refreshTargets: () => void
-  sendTo: (path: string, pc: PC) => void
+  sendTo: (path: string, pc: PC, folder?: Favorite) => void
 }
 
 // Tuile de fichier. Appui long : menu circulaire (ouvrir sur le PC, télécharger,
@@ -338,7 +359,21 @@ function FileTile({ name, path, size, actions, onClick }: { name: string; path: 
       label: t('files.actions.send'),
       icon: Send,
       emptyLabel: t('files.send.noPc'),
-      children: actions.targets.map((pc) => ({ id: pc.id, label: pc.name, icon: Monitor, onSelect: () => actions.sendTo(path, pc) })),
+      children: actions.targets.map((pc) => ({
+        id: pc.id,
+        label: pc.name,
+        icon: Monitor,
+        // Sans dossier favori, relâcher sur le PC envoie dans ses Téléchargements ;
+        // sinon, un dernier cercle propose Téléchargements et ses dossiers favoris.
+        onSelect: () => actions.sendTo(path, pc),
+        children:
+          pc.folders.length > 0
+            ? [
+                { id: 'downloads', label: t('files.send.downloads'), icon: Download, onSelect: () => actions.sendTo(path, pc) },
+                ...pc.folders.map((f) => ({ id: f.path, label: f.name, icon: Folder, onSelect: () => actions.sendTo(path, pc, f) })),
+              ]
+            : undefined,
+      })),
     },
   ]
   const { bind, menu } = useRadialMenu(items, onClick, actions.refreshTargets)
@@ -377,7 +412,7 @@ function TransferToast({ transfer }: { transfer: Transfer }) {
   )
 }
 
-const SEND_ERRORS = ['not-found', 'denied', 'offline', 'target-offline', 'target-denied'] as const
+const SEND_ERRORS = ['not-found', 'denied', 'offline', 'target-offline', 'target-denied', 'target-folder'] as const
 
 function sendError(reason: string | undefined, pc: string, t: ReturnType<typeof useTranslation>['t']) {
   const known = SEND_ERRORS.find((r) => r === reason)

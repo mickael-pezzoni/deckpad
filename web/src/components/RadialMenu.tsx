@@ -12,7 +12,7 @@ export type RadialItem = {
   active?: boolean // option « allumée », ex. déjà en favori
   onSelect?: () => void
   // Sous-menu : viser l'option remplace le cercle par ces options-là ;
-  // revenir au centre ramène le cercle de départ.
+  // revenir au centre remonte d'un cercle.
   children?: RadialItem[]
   emptyLabel?: string // affiché quand le sous-menu est vide
 }
@@ -30,13 +30,14 @@ type Open = { x: number; y: number; cx: number; cy: number; radius: number; size
 // On glisse vers une option (elle grossit), on relâche pour la choisir ; relâcher
 // au centre annule. Pendant le geste, les pages ne glissent plus et rien ne défile.
 // Une option avec des sous-options les affiche à la place du cercle dès que le
-// doigt l'atteint (sans le lever), et le centre ramène au cercle de départ.
+// doigt l'atteint (sans le lever), sur autant de niveaux que voulu ; revenir au
+// centre remonte d'un cercle.
 // Renvoie les gestionnaires à poser sur l'élément et le menu à afficher.
 export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?: () => void) {
   const phone = useMediaQuery('(max-width: 560px)')
   const [open, setOpen] = useState<Open | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
-  const [sub, setSub] = useState<number | null>(null) // option dont le sous-menu est ouvert
+  const [sub, setSub] = useState<number[]>([]) // sous-menus ouverts
   const timer = useRef<number | undefined>(undefined)
   const start = useRef<{ x: number; y: number } | null>(null)
   const fired = useRef(false)
@@ -64,15 +65,16 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?
     fired.current = true
     setOpen(menu)
     setSelected(null)
-    setSub(null)
+    setSub([])
     lockSwipe(true)
     navigator.vibrate?.(10)
     onOpen?.()
 
     let current: number | null = null
-    let parent: number | null = null
+    let path: number[] = [] // sous-menus ouverts, du premier au plus profond
     let entry: { x: number; y: number } | null = null // où le doigt était à l'ouverture du sous-menu
-    const visible = () => (parent === null ? itemsRef.current : (itemsRef.current[parent]?.children ?? []))
+    let armed = true // après un retour au centre, il faut en ressortir avant de remonter encore
+    const visible = () => levelItems(itemsRef.current, path)
     const select = (next: number | null) => {
       if (next === current) return
       current = next
@@ -81,27 +83,27 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?
     }
     const track = (px: number, py: number) => {
       const fromStart = Math.hypot(px - menu.x, py - menu.y)
-      if (parent !== null) {
-        if (fromStart < DEAD_ZONE) {
-          // Retour au centre : le cercle de départ revient.
-          parent = null
-          setSub(null)
-          select(null)
-          return
-        }
-        if (entry && Math.hypot(px - entry.x, py - entry.y) < SUB_SLOP) return
+      if (fromStart >= DEAD_ZONE) armed = true
+      if (path.length > 0 && fromStart < DEAD_ZONE && armed) {
+        // Retour au centre : on remonte d'un cercle.
+        path = path.slice(0, -1)
+        armed = false
         entry = null
-        select(pick(menu, visible().length, px, py))
+        setSub(path)
+        select(null)
         return
       }
-      const next = pick(menu, itemsRef.current.length, px, py)
+      if (entry && Math.hypot(px - entry.x, py - entry.y) < SUB_SLOP) return
+      entry = null
+      const list = visible()
+      const next = pick(menu, list.length, px, py)
       // Le sous-menu s'ouvre quand le doigt arrive vraiment sur l'option, pas dès qu'il part dans sa direction.
-      if (next !== null && itemsRef.current[next]?.children && fromStart >= menu.radius * 0.6) {
-        parent = next
+      if (next !== null && list[next]?.children && fromStart >= menu.radius * 0.6) {
+        path = [...path, next]
         entry = { x: px, y: py }
         current = null
         setSelected(null)
-        setSub(next)
+        setSub(path)
         navigator.vibrate?.(10)
         return
       }
@@ -158,7 +160,7 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?
     teardown.current = null
     setOpen(null)
     setSelected(null)
-    setSub(null)
+    setSub([])
     lockSwipe(false)
   }
 
@@ -193,8 +195,8 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?
     },
   }
 
-  const parentItem = sub === null ? undefined : items[sub]
-  const shown = parentItem ? (parentItem.children ?? []) : items
+  const parentItem = sub.length > 0 ? levelItems(items, sub.slice(0, -1))[sub[sub.length - 1]] : undefined
+  const shown = levelItems(items, sub)
   const label =
     selected !== null ? shown[selected]?.label : parentItem ? (shown.length > 0 ? parentItem.label : parentItem.emptyLabel) : ''
   const ParentIcon = parentItem?.icon
@@ -213,7 +215,7 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?
             const Icon = item.icon
             const cls = ['radial-item', item.active && 'is-active', selected === i && 'is-selected'].filter(Boolean).join(' ')
             return (
-              <span key={`${sub ?? ''}/${item.id}`} className={cls} style={{ '--dx': `${dx}px`, '--dy': `${dy}px` } as CSSProperties}>
+              <span key={`${sub.join('.')}/${item.id}`} className={cls} style={{ '--dx': `${dx}px`, '--dy': `${dy}px` } as CSSProperties}>
                 <Icon size={phone ? 26 : 30} strokeWidth={2} fill={item.active ? 'currentColor' : 'none'} />
               </span>
             )
@@ -232,6 +234,13 @@ export function useRadialMenu(items: RadialItem[], onPress?: () => void, onOpen?
     )
 
   return { bind, menu }
+}
+
+// Options du cercle au bout d'un chemin de sous-menus.
+function levelItems(items: RadialItem[], path: number[]) {
+  let list = items
+  for (const i of path) list = list[i]?.children ?? []
+  return list
 }
 
 // Position d'une option : la première en haut, puis dans le sens des aiguilles d'une montre.
