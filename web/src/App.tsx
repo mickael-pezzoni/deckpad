@@ -10,8 +10,6 @@ import { getStartPage } from './settings/startPage'
 import { PairingScreen } from './pairing/PairingScreen'
 import { SecureSetup } from './pairing/SecureSetup'
 import { PcPicker } from './pcs/PcPicker'
-import { PcSwitch } from './pcs/PcSwitch'
-import { PcContext } from './pcs/pcContext'
 import { fetchPcs, getStoredPc, storePc, type PC } from './pcs/pcs'
 import { setCurrentPc } from './api'
 import { alreadySecured, askedRecently, claimHandoff, goSecure, onInsecureLan, securePort, secureReachable } from './pairing/secure'
@@ -106,11 +104,9 @@ export default function App() {
   if (screen.kind === 'pick') return <PcPicker current={getStoredPc()} onPick={pick} />
 
   return (
-    <PcContext.Provider value={{ name: screen.pc.name, switchPc: () => setScreen({ kind: 'pick' }) }}>
-      <AppShell pages={pages} current={current} onNavigate={(i) => swiper?.slideTo(i)} pcSwitch={<PcSwitch />}>
-        {deck}
-      </AppShell>
-    </PcContext.Provider>
+    <AppShell pages={pages} current={current} onNavigate={(i) => swiper?.slideTo(i)} onSwitchPc={() => setScreen({ kind: 'pick' })}>
+      {deck}
+    </AppShell>
   )
 }
 

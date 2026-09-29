@@ -218,7 +218,6 @@ export const en: Messages = {
     failed: 'Failed: {{action}}',
   },
   settings: {
-    pc: 'Controlled PC',
     language: 'Language',
     startPage: 'Start page',
   },

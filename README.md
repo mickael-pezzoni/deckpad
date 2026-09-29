@@ -60,7 +60,7 @@ Picking a PC that isn't paired yet opens a keypad on the tablet and a small wind
 - The hub talks to each PC over HTTPS. The agent creates its own certificate on first launch (`agent.crt`, valid 20 years). The hub remembers its fingerprint at pairing and then refuses any other certificate, like SSH does: nothing to install on the PC or the tablet for this part.
 - The PC only keeps the fingerprint of the hub's key, in `%APPDATA%\deckpad\devices.json` (Windows) or `~/.config/deckpad/devices.json` (Linux). Deleting this file unpairs the hub; it then asks for a new code.
 - The window opens with Edge or Chrome (Chromium on Linux), otherwise in the default browser.
-- To switch PC: the button with the PC's name at the bottom, or Settings on a phone.
+- To switch PC: the first button of the bottom menu (two arrows) brings back the list. The chosen PC is remembered on the tablet: the app reopens on it.
 
 ### Install the app on the tablet (PWA)
 

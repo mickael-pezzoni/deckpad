@@ -216,7 +216,6 @@ export const fr = {
     failed: 'Impossible : {{action}}',
   },
   settings: {
-    pc: 'PC piloté',
     language: 'Langue',
     startPage: 'Page au lancement',
   },
