@@ -8,8 +8,6 @@ Control your PC from a tablet while you play: themed pages you swipe through, wi
 
 ## Preview
 
-Most of these screenshots were taken before the hub: the tablet's bottom bar doesn't show the "Switch PC" button yet.
-
 ![PC info](docs/screenshots/info.png)
 
 | | |
@@ -20,7 +18,7 @@ Most of these screenshots were taken before the hub: the tablet's bottom bar doe
 | ![Files](docs/screenshots/files.png) Files | ![Clipboard](docs/screenshots/clipboard.png) Clipboard |
 | ![System](docs/screenshots/system.png) System | ![Light theme](docs/screenshots/info-light.png) Light theme |
 | ![Settings](docs/screenshots/settings.png) Settings | ![In French](docs/screenshots/processes-french.png) In French |
-| ![PC list](docs/screenshots/pcs.png) Choose a PC (hub) | |
+| ![PC list](docs/screenshots/pcs.png) Choose a PC (hub) | ![Radial menu](docs/screenshots/files-radial.png) Long press a file |
 
 On phones too, with a side menu:
 
