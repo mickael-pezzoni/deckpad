@@ -8,6 +8,8 @@ Control your PC from a tablet while you play: themed pages you swipe through, wi
 
 ## Preview
 
+Most of these screenshots were taken before the hub: the tablet's bottom bar doesn't show the "Switch PC" button yet.
+
 ![PC info](docs/screenshots/info.png)
 
 | | |
@@ -44,7 +46,12 @@ docker compose up -d
 
 The container uses the host network (`network_mode: host`), otherwise it can't hear the PCs' announcements. Pairings and the certificate are kept in a Docker volume. Without Docker: `cd hub && go run .` (Linux or Windows), data in `~/.config/deckpad-hub` (`%APPDATA%\deckpad-hub` on Windows), or `-data <folder>`.
 
-The hub listens on port 8430 (HTTP) and 8431 (HTTPS). Open them in the server's firewall if needed (on NixOS: `networking.firewall.allowedTCPPorts = [ 8430 8431 ];`).
+The hub listens on port 8430 (HTTP) and 8431 (HTTPS), and needs UDP 5353 (mDNS) to find the PCs. Open them in the server's firewall if needed, e.g. on NixOS:
+
+```nix
+networking.firewall.allowedTCPPorts = [ 8430 8431 ];
+networking.firewall.allowedUDPPorts = [ 5353 ];
+```
 
 ### How PCs are found
 
@@ -52,7 +59,8 @@ Each agent announces itself over mDNS (`_deckpad._tcp`), like printers do. The h
 
 - A new PC shows up within about 10 seconds, and disappears about 30 seconds after deckpad stops.
 - Each agent keeps a stable id in `agent-id`, next to `devices.json`, so a PC whose address changes isn't listed twice.
-- `-announce=false` on the agent turns the announcement off. If the Windows firewall asks, allow deckpad on private networks.
+- `-announce=false` on the agent turns the announcement off.
+- Each PC must let in UDP 5353 (mDNS) and TCP 8421 (the agent's API). On Windows, allow deckpad on private networks when the firewall asks. On Linux, open them yourself if a firewall is on (NixOS: `allowedUDPPorts = [ 5353 ]` and `allowedTCPPorts = [ 8421 ]`).
 
 ### Pair
 
@@ -120,7 +128,7 @@ App texts: `web/src/i18n/en.ts` and `web/src/i18n/fr.ts` (react-i18next). A text
 | PC info | ✅ |
 | Stats | ✅ CPU, RAM, GPU of any brand (FPS and AMD GPU temperature on Windows to come) |
 | Processes | ✅ user applications, sort by CPU/RAM, close with a long press |
-| Files | ✅ drives and USB sticks, folder browsing, favorites; long press a file for a radial menu: open on the PC, download to the tablet, favorite, show in folder, send to another paired PC, into its Downloads or one of its favorite folders (renamed "name (1)" if taken; the hub copies it PC to PC) |
+| Files | ✅ drives and USB sticks, folder browsing, recent files, favorite files and folders (your user folder by default, stored in `favorites.json` next to `devices.json`). Long press a folder to open it on the PC or favorite it. Long press a file for a radial menu: open on the PC (the window comes to the front), download to the tablet, favorite, show in folder, send to another paired PC into its Downloads or one of its favorite folders (renamed "name (1)" if taken; the hub copies it PC to PC). On Linux, bringing the window to the front needs `xdotool` (X11 only) |
 | Network | ✅ live throughput, latency, local and public IP, connection type |
 | Audio | ✅ master and per-app volume, microphone, output choice (headset, speakers…). On Linux: `pactl` required (ships with PulseAudio / PipeWire) |
 | Media | ✅ title, artist, cover, play/pause, next/previous (Spotify, YouTube in the browser, VLC…). Windows 10 1809+; on Linux, any MPRIS-compatible player |
