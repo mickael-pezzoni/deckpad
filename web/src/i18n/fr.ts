@@ -250,12 +250,6 @@ export const fr = {
   settings: {
     language: 'Langue',
     startPage: 'Page au lancement',
-    autostart: 'Lancer avec ce PC',
-    on: 'Oui',
-    off: 'Non',
-    autostartDev: 'Indisponible avec go run : lance l’agent compilé.',
-    autostartUnavailable: 'Indisponible sur ce PC.',
-    autostartFailed: 'Impossible de changer ce réglage.',
   },
   pcs: {
     title: 'Choisis un PC',

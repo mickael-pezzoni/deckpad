@@ -1,7 +1,8 @@
+package main
+
 // Icône et nom de deckpad.exe (rsrc_windows_*.syso), à régénérer après une
 // modification de winres/ :
 //go:generate go run github.com/tc-hib/go-winres@v0.3.3 make --in winres/winres.json --arch amd64,arm64 --out rsrc
-package main
 
 import (
 	"crypto/tls"
@@ -20,6 +21,7 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/server"
 	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/tlscert"
+	"github.com/mickael-pezzoni/deckpad/agent/tray"
 	"github.com/mickael-pezzoni/deckpad/agent/window"
 )
 
@@ -95,7 +97,9 @@ func main() {
 	if *announce {
 		startAnnounce(port)
 	}
-	log.Fatal(http.Serve(tls.NewListener(ln, tlscert.TLSConfig(cert)), handler))
+	go func() { log.Fatal(http.Serve(tls.NewListener(ln, tlscert.TLSConfig(cert)), handler)) }()
+	// L'icône occupe le fil principal (boucle de messages) jusqu'à « Quitter ».
+	tray.Run(port)
 }
 
 // startAnnounce publie l'agent en mDNS. En cas d'échec (pare-feu, pas de

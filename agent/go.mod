@@ -3,6 +3,7 @@ module github.com/mickael-pezzoni/deckpad/agent
 go 1.24.7
 
 require (
+	fyne.io/systray v1.12.2
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/libp2p/zeroconf/v2 v2.2.0
 	github.com/shirou/gopsutil/v4 v4.26.8

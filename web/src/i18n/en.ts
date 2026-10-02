@@ -252,12 +252,6 @@ export const en: Messages = {
   settings: {
     language: 'Language',
     startPage: 'Start page',
-    autostart: 'Start with this PC',
-    on: 'On',
-    off: 'Off',
-    autostartDev: 'Not available with go run: start the built agent.',
-    autostartUnavailable: 'Not available on this PC.',
-    autostartFailed: 'Could not change this setting.',
   },
   pcs: {
     title: 'Choose a PC',

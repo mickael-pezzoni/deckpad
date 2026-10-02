@@ -15,7 +15,6 @@ import (
 
 	"github.com/mickael-pezzoni/deckpad/agent/audio"
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
-	"github.com/mickael-pezzoni/deckpad/agent/autostart"
 	"github.com/mickael-pezzoni/deckpad/agent/clipboard"
 	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/live"
@@ -69,8 +68,6 @@ func New(store *auth.Store, keys *shortcuts.Store, favs *files.Favorites) http.H
 	mux.Handle("GET /api/clipboard/stream", stream(live.NewHub(time.Second, clipboard.Collect)))
 	mux.HandleFunc("GET /api/clipboard/image", handleClipboardImage)
 	mux.HandleFunc("POST /api/clipboard/send", handleClipboardSend)
-	mux.HandleFunc("GET /api/autostart", handleAutostart)
-	mux.HandleFunc("PUT /api/autostart", handleAutostartSet)
 	return requireToken(store, mux)
 }
 
@@ -486,30 +483,6 @@ func stream[T any](hub *live.Hub[T]) http.HandlerFunc {
 			}
 		}
 	}
-}
-
-func handleAutostart(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, autostart.Get())
-}
-
-func handleAutostartSet(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Enabled bool `json:"enabled"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "requête invalide", http.StatusBadRequest)
-		return
-	}
-	st, err := autostart.Set(req.Enabled)
-	if errors.Is(err, autostart.ErrUnsupported) {
-		http.Error(w, err.Error(), http.StatusConflict)
-		return
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, st)
 }
 
 func writeJSON(w http.ResponseWriter, v any) {
