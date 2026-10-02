@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/autostart"
 	"github.com/mickael-pezzoni/deckpad/agent/discovery"
 	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/server"
@@ -22,7 +24,11 @@ func main() {
 	addr := flag.String("addr", ":8421", "adresse d'écoute de l'API HTTPS, appelée par le hub")
 	windowAddr := flag.String("window-addr", "127.0.0.1:8420", "adresse locale de la fenêtre du code d'appairage")
 	announce := flag.Bool("announce", true, "s'annoncer sur le réseau local (mDNS) pour le hub")
+	background := flag.Bool(strings.TrimPrefix(autostart.Flag, "-"), false, "lancé à l'ouverture de session : sans console, journal dans agent.log")
 	flag.Parse()
+	if *background {
+		autostart.Background()
+	}
 
 	path, err := auth.DefaultPath()
 	if err != nil {
