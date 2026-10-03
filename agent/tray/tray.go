@@ -2,7 +2,7 @@
 
 // Package tray affiche l'icône de l'agent dans la zone de notification
 // (Windows) ou via StatusNotifierItem (KDE, GNOME avec l'extension
-// AppIndicator…) : démarrage avec la session et arrêt de l'agent.
+// AppIndicator…) : démarrage avec Windows et arrêt de l'agent.
 package tray
 
 import (
@@ -41,12 +41,15 @@ func ready(port string) {
 	status.Disable()
 	systray.AddSeparator()
 
-	st := autostart.Get()
-	start := systray.AddMenuItemCheckbox(startLabel(st), "", st.Enabled)
-	if !st.Supported {
-		start.Disable()
+	// Démarrage auto : Windows seulement, l'entrée n'existe pas ailleurs.
+	start := &systray.MenuItem{ClickedCh: make(chan struct{})}
+	if st := autostart.Get(); st.Reason != autostart.ReasonOS {
+		start = systray.AddMenuItemCheckbox(startLabel(st), "", st.Enabled)
+		if !st.Supported {
+			start.Disable()
+		}
+		systray.AddSeparator()
 	}
-	systray.AddSeparator()
 	quit := systray.AddMenuItem("Quitter deckpad", "")
 
 	for {
@@ -69,10 +72,7 @@ func ready(port string) {
 }
 
 func startLabel(st autostart.Status) string {
-	label := "Lancer au démarrage du PC"
-	if runtime.GOOS == "windows" {
-		label = "Lancer au démarrage de Windows"
-	}
+	label := "Lancer au démarrage de Windows"
 	if st.Reason == autostart.ReasonDev {
 		label += " (indisponible avec go run)"
 	}

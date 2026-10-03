@@ -1,5 +1,6 @@
-// Package autostart lance l'agent à l'ouverture de session de l'utilisateur :
-// clé Run du registre sous Windows, fichier .desktop de ~/.config/autostart sous Linux.
+// Package autostart lance l'agent à l'ouverture de session de l'utilisateur
+// (clé Run du registre). Windows seulement : sous Linux, chacun le règle dans
+// son bureau.
 // Démarrer avec la session (et non comme service) garde l'accès au bureau :
 // premier plan, touches, presse-papiers.
 package autostart
