@@ -6,7 +6,6 @@
 package tray
 
 import (
-	_ "embed"
 	"log"
 	"os"
 	"runtime"
@@ -14,13 +13,8 @@ import (
 	"fyne.io/systray"
 
 	"github.com/mickael-pezzoni/deckpad/agent/autostart"
+	"github.com/mickael-pezzoni/deckpad/agent/icon"
 )
-
-//go:embed icon.ico
-var iconICO []byte
-
-//go:embed icon.png
-var iconPNG []byte
 
 // Run affiche l'icône et bloque jusqu'à « Quitter », qui arrête l'agent.
 // Sans zone de notification (Linux sans bureau), il bloque simplement.
@@ -30,9 +24,9 @@ func Run(port string) {
 
 func ready(port string) {
 	if runtime.GOOS == "windows" {
-		systray.SetIcon(iconICO)
+		systray.SetIcon(icon.ICO)
 	} else {
-		systray.SetIcon(iconPNG)
+		systray.SetIcon(icon.PNG)
 	}
 	systray.SetTitle("deckpad")
 	systray.SetTooltip("deckpad · port " + port)

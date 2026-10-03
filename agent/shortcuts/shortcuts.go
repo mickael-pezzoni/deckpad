@@ -17,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/mickael-pezzoni/deckpad/agent/desktop"
+	"github.com/mickael-pezzoni/deckpad/agent/notify"
 )
 
 type Kind string
@@ -139,7 +140,11 @@ func (s *Store) Run(id string) error {
 	case KindOpen:
 		return desktop.Open(expandHome(sc.Target))
 	case KindCapture:
-		return capture()
+		if err := capture(); err != nil {
+			return err
+		}
+		notify.Send("Capture d'écran", "Copiée dans le presse-papiers")
+		return nil
 	}
 	return ErrInvalid
 }
