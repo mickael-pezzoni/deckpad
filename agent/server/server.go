@@ -20,6 +20,7 @@ import (
 	"github.com/mickael-pezzoni/deckpad/agent/live"
 	"github.com/mickael-pezzoni/deckpad/agent/media"
 	"github.com/mickael-pezzoni/deckpad/agent/network"
+	"github.com/mickael-pezzoni/deckpad/agent/notify"
 	"github.com/mickael-pezzoni/deckpad/agent/process"
 	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/stats"
@@ -172,6 +173,7 @@ func handleReceive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("fichier reçu : %s", path)
+	notify.Send("Fichier reçu", filepath.Base(path)+" · dans "+filepath.Base(filepath.Dir(path)))
 	writeJSON(w, map[string]string{"name": filepath.Base(path), "path": path})
 }
 
@@ -419,6 +421,9 @@ func handleClipboardSend(w http.ResponseWriter, r *http.Request) {
 		log.Printf("presse-papiers (%s) : %v", req.Action, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	default:
+		if req.Action == "copy" {
+			notify.Send("Texte copié depuis la tablette", notify.Excerpt(req.Text, 80))
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -450,6 +455,7 @@ func handleKill(procs *process.Lister) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusForbidden) // souvent : droits admin requis
 		default:
 			log.Printf("processus %q fermé (%d)", req.Name, n)
+			notify.Send("Application fermée depuis la tablette", req.Name)
 			writeJSON(w, map[string]int{"killed": n})
 		}
 	}

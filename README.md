@@ -134,3 +134,5 @@ App texts: `web/src/i18n/en.ts` and `web/src/i18n/fr.ts` (react-i18next). A text
 | Clipboard | ✅ send text to the PC (copy, open, type), see the PC clipboard, history |
 | System | ✅ lock, sleep, restart, shut down (long press) |
 | Settings | ✅ language (the device's language on first launch, English if it is neither English nor French) and start page, saved on the tablet |
+
+Some actions also show a notification on the PC, so whoever sits in front of it knows what just happened: file received, screen capture, text copied, application closed. Windows: a regular notification (Action Center) signed deckpad. Linux: any desktop with a notification server (KDE, GNOME, XFCE…); without a desktop, nothing is shown.
