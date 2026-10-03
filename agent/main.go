@@ -1,5 +1,9 @@
 package main
 
+// Icône et nom de deckpad.exe (rsrc_windows_*.syso), à régénérer après une
+// modification de winres/ :
+//go:generate go run github.com/tc-hib/go-winres@v0.3.3 make --in winres/winres.json --arch amd64,arm64 --out rsrc
+
 import (
 	"crypto/tls"
 	"flag"
@@ -8,13 +12,16 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mickael-pezzoni/deckpad/agent/auth"
+	"github.com/mickael-pezzoni/deckpad/agent/autostart"
 	"github.com/mickael-pezzoni/deckpad/agent/discovery"
 	"github.com/mickael-pezzoni/deckpad/agent/files"
 	"github.com/mickael-pezzoni/deckpad/agent/server"
 	"github.com/mickael-pezzoni/deckpad/agent/shortcuts"
 	"github.com/mickael-pezzoni/deckpad/agent/tlscert"
+	"github.com/mickael-pezzoni/deckpad/agent/tray"
 	"github.com/mickael-pezzoni/deckpad/agent/window"
 )
 
@@ -22,7 +29,11 @@ func main() {
 	addr := flag.String("addr", ":8421", "adresse d'écoute de l'API HTTPS, appelée par le hub")
 	windowAddr := flag.String("window-addr", "127.0.0.1:8420", "adresse locale de la fenêtre du code d'appairage")
 	announce := flag.Bool("announce", true, "s'annoncer sur le réseau local (mDNS) pour le hub")
+	background := flag.Bool(strings.TrimPrefix(autostart.Flag, "-"), false, "lancé à l'ouverture de session : sans console, journal dans agent.log")
 	flag.Parse()
+	if *background {
+		autostart.Background()
+	}
 
 	path, err := auth.DefaultPath()
 	if err != nil {
@@ -86,7 +97,9 @@ func main() {
 	if *announce {
 		startAnnounce(port)
 	}
-	log.Fatal(http.Serve(tls.NewListener(ln, tlscert.TLSConfig(cert)), handler))
+	go func() { log.Fatal(http.Serve(tls.NewListener(ln, tlscert.TLSConfig(cert)), handler)) }()
+	// L'icône occupe le fil principal (boucle de messages) jusqu'à « Quitter ».
+	tray.Run(port)
 }
 
 // startAnnounce publie l'agent en mDNS. En cas d'échec (pare-feu, pas de
