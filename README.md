@@ -60,6 +60,58 @@ Each agent announces itself over mDNS (`_deckpad._tcp`), like printers do. The h
 - `-announce=false` on the agent turns the announcement off.
 - Each PC must let in UDP 5353 (mDNS) and TCP 8421 (the agent's API). On Windows, allow deckpad on private networks when the firewall asks. On Linux, open them yourself if a firewall is on (NixOS: `allowedUDPPorts = [ 5353 ]` and `allowedTCPPorts = [ 8421 ]`).
 
+### Start deckpad with the PC
+
+The agent shows the deckpad icon in the notification area while it runs (on Linux: KDE, or GNOME with the AppIndicator extension).
+
+**Windows**: right-click the icon near the clock › **Lancer au démarrage de Windows**. Click again to turn it off. deckpad then starts at login without a console window, and its log goes to `%APPDATA%\deckpad\agent.log`. **Quitter deckpad** stops it. Not available with `go run` (the exe is temporary): use the built `deckpad.exe`.
+
+**Linux**: use a systemd *user* service, so the agent runs in your desktop session (keys, clipboard, notifications need it; not a system service). Create `~/.config/systemd/user/deckpad.service`, with the path to your agent:
+
+```ini
+[Unit]
+Description=deckpad agent
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/home/you/bin/deckpad
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target
+```
+
+Then:
+
+```
+systemctl --user daemon-reload
+systemctl --user enable --now deckpad
+journalctl --user -u deckpad -f   # log
+```
+
+`systemctl --user disable --now deckpad` turns it off. `graphical-session.target` is started by KDE Plasma and GNOME after login, with `DISPLAY` / `WAYLAND_DISPLAY` set.
+
+On NixOS, declare it in `configuration.nix` instead (`path` gives the agent the tools installed in `environment.systemPackages`, such as `xdotool` or `pactl`):
+
+```nix
+systemd.user.services.deckpad = {
+  description = "deckpad agent";
+  wantedBy = [ "graphical-session.target" ];
+  partOf = [ "graphical-session.target" ];
+  after = [ "graphical-session.target" ];
+  path = [ "/run/current-system/sw" ];
+  serviceConfig = {
+    ExecStart = "/home/you/bin/deckpad";
+    Restart = "on-failure";
+    RestartSec = 5;
+  };
+};
+```
+
+After `nixos-rebuild switch`, it starts at your next login (or right away with `systemctl --user start deckpad`).
+
 ### Pair
 
 Picking a PC that isn't paired yet opens a keypad on the tablet and a small window on the PC with a 6-digit code (also printed in the console). That one code does two things: it lets the tablet use the hub (the first time), and gives the hub a key to that PC. Other tablets pair the same way, with any PC's code.
