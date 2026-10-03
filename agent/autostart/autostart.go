@@ -41,24 +41,30 @@ func Get() Status {
 	return Status{Supported: true, Enabled: enabled(exe)}
 }
 
-// Set active ou retire le démarrage avec la session.
+// Set active ou retire le démarrage avec la session, puis relit l'état.
 func Set(on bool) (Status, error) {
+	err := set(on)
+	return Get(), err
+}
+
+func set(on bool) error {
 	if !supported {
-		return Get(), ErrUnsupported
+		return ErrUnsupported
 	}
 	if !on {
-		return Get(), disable()
+		return disable()
 	}
 	exe, err := executable()
 	if err != nil {
-		return Get(), ErrUnsupported
+		return ErrUnsupported
 	}
-	return Get(), enable(exe, args())
+	return enable(exe, args())
 }
 
 // executable renvoie le chemin de l'agent, sauf s'il vient de go run : ce
 // binaire est effacé à l'arrêt, l'enregistrer ne servirait à rien.
-func executable() (string, error) {
+// Variable pour les tests, lancés eux-mêmes depuis go-build.
+var executable = func() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
 		return "", err

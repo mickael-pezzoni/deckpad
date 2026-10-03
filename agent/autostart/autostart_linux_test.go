@@ -38,3 +38,21 @@ func TestEnableDisable(t *testing.T) {
 		t.Fatalf("disable deux fois : %v", err)
 	}
 }
+
+// Set doit renvoyer l'état après le changement : un clic active, le suivant désactive.
+func TestSetToggles(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	old := executable
+	executable = func() (string, error) { return "/usr/bin/deckpad", nil }
+	defer func() { executable = old }()
+
+	for _, on := range []bool{true, false, true, false} {
+		st, err := Set(on)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if st.Enabled != on {
+			t.Fatalf("Set(%v) renvoie enabled=%v", on, st.Enabled)
+		}
+	}
+}
